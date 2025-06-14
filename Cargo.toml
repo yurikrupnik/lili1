@@ -1,6 +1,10 @@
+
 [workspace]
-resolver = "2"
-members = []
+resolver = '2'
+members = [
+	'libs/rust/services',
+	'apps/zerg/api',
+]
 
 [profile.release]
 lto = true
