@@ -35,6 +35,9 @@ allow-direct-references = true
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.uv]
+package = true
+
 [tool.ruff]
 exclude = [
   ".ruff_cache",
