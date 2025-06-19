@@ -64,13 +64,14 @@ jobs:
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: bun nx-cloud record -- echo Hello World
-
+      - name: Install Python dependencies
+        run: uv sync --all-extras --dev
       # Run format check for Python projects
-      - name: Check Python formatting
-        run: bun nx affected -t format --parallel=3
+#      - name: Check Python formatting
+#        run: bun nx affected -t format --parallel=3
       # Log in to Docker Hub
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       # Nx Affected runs only tasks affected by the changes in this PR/commit. Learn more: https://nx.dev/ci/features/affected
-      - run: bun nx affected -t lint test build container --parallel=3
+      - run: bun nx affected -t format lint test build container --parallel=3
