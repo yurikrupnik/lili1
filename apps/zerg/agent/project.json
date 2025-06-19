@@ -96,7 +96,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/zerg/agent",
-        "command": "langgraph build -t zerg-agent"
+        "command": "langgraph build -t yurikrupnik/zerg-agent"
       }
     }
   },
