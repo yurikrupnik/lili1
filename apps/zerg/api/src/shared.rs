@@ -58,7 +58,7 @@ pub fn get_env_parse<T: FromStr>(name: &'static str) -> Result<T> {
 // region:    --- Error
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Error {
   MissingEnv(&'static str),
   WrongFormat(&'static str),
