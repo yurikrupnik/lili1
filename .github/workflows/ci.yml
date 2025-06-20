@@ -86,57 +86,7 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  security-scan:
-    runs-on: ubuntu-latest
-    needs: main
-    if: success()
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          filter: tree:0
-          fetch-depth: 0
-
-      # Setup Bun for Nx commands
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-
-      # Install dependencies for Nx
-      - run: bun install --no-cache
-
-      # Install Trivy
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install trivy
-
-      # Log in to Docker Hub to pull images
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - uses: nrwl/nx-set-shas@v4
-
-      # Run Trivy security scans on affected apps with containers
-      - name: Run Trivy Security Scans
-        run: bun nx affected -t trivy --configuration=ci --parallel=2
+      - run: bun nx affected -t trivy --parallel=3
         env:
-          GITHUB_SHA: ${{ github.sha }}
-
-      # Upload Trivy results as artifacts
-      - name: Upload Trivy scan results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: trivy-results
-          path: |
-            **/trivy-report.json
-            **/trivy-results.sarif
-          retention-days: 30
+          DOCKER_BUILDKIT: 1
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
