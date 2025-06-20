@@ -65,7 +65,7 @@ jobs:
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: bun nx-cloud record -- echo Hello World
       - name: Install Python dependencies
-        run: uv sync --all-extras --dev
+        run: uv sync --all-extras
       # Run format check for Python projects
 #      - name: Check Python formatting
 #        run: bun nx affected -t format --parallel=3
