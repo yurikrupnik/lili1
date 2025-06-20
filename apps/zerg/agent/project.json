@@ -107,10 +107,12 @@
       "configurations": {
         "production": {
           "commands": [
-            "uv run langgraph build -t yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
-            "docker tag yurikrupnik/zerg-agent:${GITHUB_SHA::7} yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
-            "docker push yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
-            "docker push yurikrupnik/zerg-agent:${GITHUB_REF_NAME}"
+            "uv run langgraph build -t yurikrupnik/zerg-agent:latest",
+            "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
+            "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
+            "docker push yurikrupnik/zerg-agent:latest",
+            "docker push yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
+            "docker push yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
           ]
         }
       }
@@ -120,16 +122,18 @@
       "dependsOn": ["container"],
       "options": {
         "commands": [
+          "export SHORT_SHA=$(echo ${GITHUB_SHA:-dev} | cut -c1-7)",
           "echo 'Scanning container image for vulnerabilities...'",
-          "trivy image --format table --severity HIGH,CRITICAL yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
+          "trivy image --format table --severity HIGH,CRITICAL yurikrupnik/zerg-agent:$SHORT_SHA"
         ],
         "parallel": false
       },
       "configurations": {
         "production": {
           "commands": [
+            "export SHORT_SHA=$(echo ${GITHUB_SHA:-dev} | cut -c1-7)",
             "echo 'Scanning container image for vulnerabilities...'",
-            "trivy image --format table --severity HIGH,CRITICAL --exit-code 1 yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
+            "trivy image --format table --severity HIGH,CRITICAL --exit-code 1 yurikrupnik/zerg-agent:$SHORT_SHA"
           ]
         }
       }
