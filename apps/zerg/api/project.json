@@ -88,6 +88,17 @@
           "platforms": ["linux/amd64"]
         }
       }
+    },
+    "trivy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["container"],
+      "options": {
+        "commands": [
+          "echo 'Scanning container image for vulnerabilities...'",
+          "trivy image --format json --severity HIGH,CRITICAL --exit-code 1 --output trivy-report.json yurikrupnik/zerg-api:${GITHUB_SHA::7}"
+        ],
+        "parallel": false
+      }
     }
   },
   "tags": []

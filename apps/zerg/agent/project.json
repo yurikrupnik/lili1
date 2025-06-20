@@ -108,13 +108,24 @@
         "production": {
           "commands": [
             "uv run langgraph build -t yurikrupnik/zerg-agent:latest",
-            "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_SHA}",
+            "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
             "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
             "docker push yurikrupnik/zerg-agent:latest",
-            "docker push yurikrupnik/zerg-agent:${GITHUB_SHA}",
+            "docker push yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
             "docker push yurikrupnik/zerg-agent:${GITHUB_REF_NAME}"
           ]
         }
+      }
+    },
+    "trivy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["container"],
+      "options": {
+        "commands": [
+          "echo 'Scanning container image for vulnerabilities...'",
+          "trivy image --format json --severity HIGH,CRITICAL --exit-code 1 --output trivy-report.json yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
+        ],
+        "parallel": false
       }
     }
   },
