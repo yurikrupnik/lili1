@@ -108,9 +108,9 @@
         "production": {
           "commands": [
             "export SHORT_SHA=$(echo ${GITHUB_SHA:-dev} | cut -c1-7)",
-            "uv run langgraph build -t yurikrupnik/zerg-agent:$SHORT_SHA",
-            "docker tag yurikrupnik/zerg-agent:$SHORT_SHA yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
-            "docker push yurikrupnik/zerg-agent:$SHORT_SHA",
+            "uv run langgraph build -t yurikrupnik/zerg-agent:${SHORT_SHA}",
+            "docker tag yurikrupnik/zerg-agent:${SHORT_SHA} yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
+            "docker push yurikrupnik/zerg-agent:${SHORT_SHA}",
             "docker push yurikrupnik/zerg-agent:${GITHUB_REF_NAME}"
           ]
         }
