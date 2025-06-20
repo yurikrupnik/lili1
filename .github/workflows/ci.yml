@@ -19,22 +19,74 @@ jobs:
           filter: tree:0
           fetch-depth: 0
 
-      
+      # Setup Bun for JavaScript/TypeScript and Nx
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-      
+
+      # Setup Python with uv
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      # Setup Rust toolchain
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # Cache Rust dependencies
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-directories: "dist/target"
+          cache-all-crates: true
+          cache-on-failure: true
+
       # This enables task distribution via Nx Cloud
       # Run this command as early as possible, before dependencies are installed
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
       # Uncomment this line to enable task distribution
       # - run: bunx nx-cloud start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="build"
 
-      
+      # Install JavaScript/Node dependencies
       - run: bun install --no-cache
+
+      # Install Python dependencies
+      - name: Install Python dependencies
+        run: uv sync --all-extras --dev
+
       - uses: nrwl/nx-set-shas@v4
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: bun nx-cloud record -- echo Hello World
+      - name: Test lang
+        run: uv run langgraph --help
+      # Run format check for Python projects
+#      - name: Check Python formatting
+#        run: bun nx affected -t format --parallel=3
+      # Log in to Docker Hub
+#      - name: Log in to Docker Hub
+#        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       # Nx Affected runs only tasks affected by the changes in this PR/commit. Learn more: https://nx.dev/ci/features/affected
-      - run: bun nx affected -t lint test build
+      - run: bun nx affected -t format lint test build container --parallel=3
+        env:
+          DOCKER_BUILDKIT: 1
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - run: bun nx affected -t trivy --parallel=3
+#        env:
+#          DOCKER_BUILDKIT: 1
+#          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

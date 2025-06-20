@@ -1,0 +1,32 @@
+[project]
+name = "lili1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [ "python-shared", "zerg-job" ]
+
+[tool.uv.sources.python-shared]
+workspace = true
+
+[tool.uv.sources.zerg-job]
+workspace = true
+
+[tool.uv.workspace]
+members = [
+ "apps/zerg/job",
+ "apps/zerg/agent",
+ "libs/python/shared",
+ "libs/python/services",
+]
+
+[dependency-groups]
+dev = [
+  "ruff>=0.8.2",
+  "autopep8>=2.3.1",
+  "pytest>=8.3.4",
+  "pytest-sugar>=1.0.0",
+  "pytest-cov>=6.0.0",
+  "pytest-html>=4.1.1",
+  "langgraph-cli>=0.3.3",
+]

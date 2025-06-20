@@ -57,6 +57,48 @@
           "release": true
         }
       }
+    },
+    "container": {
+      "executor": "@nx-tools/nx-container:build",
+      "options": {
+        "push": true,
+        "file": "./rust.Dockerfile",
+        "context": ".",
+        "target": "rust",
+        "build-args": [
+          "APP_NAME=zerg_api"
+        ],
+        "metadata": {
+          "images": [
+            "yurikrupnik/zerg-api"
+          ],
+          "tags": [
+            "type=schedule",
+            "type=ref,event=branch",
+            "type=ref,event=tag",
+            "type=ref,event=pr",
+            "type=semver,pattern={{version}}",
+            "type=sha"
+          ]
+        }
+      },
+      "configurations": {
+        "production": {
+          "push": true,
+          "platforms": ["linux/amd64"]
+        }
+      }
+    },
+    "trivy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["container"],
+      "options": {
+        "commands": [
+          "echo 'Scanning container image for vulnerabilities...'",
+          "trivy image --format table --severity HIGH,CRITICAL --exit-code 1 yurikrupnik/zerg-api:${GITHUB_SHA::7}"
+        ],
+        "parallel": false
+      }
     }
   },
   "tags": []

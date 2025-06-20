@@ -8,6 +8,7 @@
     "@monodon/rust": "2.3.0"
   },
   "devDependencies": {
+    "@nx-tools/nx-container": "^6.7.1",
     "@nx/workspace": "21.2.0",
     "@nxlv/python": "^21.0.3",
     "nx": "21.2.0"
