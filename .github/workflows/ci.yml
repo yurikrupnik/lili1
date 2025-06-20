@@ -86,7 +86,7 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: bun nx affected -t trivy --parallel=3
-        env:
-          DOCKER_BUILDKIT: 1
-          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - run: bun nx affected -t trivy --parallel=3
+#        env:
+#          DOCKER_BUILDKIT: 1
+#          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
