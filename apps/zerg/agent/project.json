@@ -92,11 +92,29 @@
         "debug": false
       }
     },
-    "containers": {
+    "container": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/zerg/agent",
-        "command": "uv run langgraph build -t yurikrupnik/zerg-agent"
+        "commands": [
+          "uv run langgraph build -t yurikrupnik/zerg-agent:latest",
+          "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_SHA:-dev}",
+          "docker push yurikrupnik/zerg-agent:latest",
+          "docker push yurikrupnik/zerg-agent:${GITHUB_SHA:-dev}"
+        ],
+        "parallel": false
+      },
+      "configurations": {
+        "production": {
+          "commands": [
+            "uv run langgraph build -t yurikrupnik/zerg-agent:latest",
+            "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_SHA}",
+            "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
+            "docker push yurikrupnik/zerg-agent:latest",
+            "docker push yurikrupnik/zerg-agent:${GITHUB_SHA}",
+            "docker push yurikrupnik/zerg-agent:${GITHUB_REF_NAME}"
+          ]
+        }
       }
     }
   },
