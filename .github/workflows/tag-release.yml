@@ -3,21 +3,24 @@ name: Tag Release
 on:
   push:
     tags:
-      - 'v*'  # Triggers on version tags like v1.0.0, v2.1.3, etc.
-      - '*'   # Triggers on any tag
+      - '*.*.*'  # Triggers on semantic version tags like 1.0.0, 2.1.3, etc.
+      - 'v*'     # Triggers on version tags like v1.0.0, v2.1.3, etc.
 
 permissions:
   actions: read
   contents: read
 
 jobs:
-  build-containers:
+  container:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          filter: tree:0
           fetch-depth: 0
+
+      # This is the key - sets up proper SHAs for nx
+      - name: Derive appropriate SHAs for base and head for `nx run-many` commands
+        uses: nrwl/nx-set-shas@v4
 
       # Setup Bun for JavaScript/TypeScript and Nx
       - uses: oven-sh/setup-bun@v1
@@ -69,8 +72,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Extract tag name for container tagging
-      - run: bun nx affected -t container --parallel=3
+      # Build ALL containers using nx run-many (like your working example)
+      - name: Container build
+        run: bun nx run-many --target=container --parallel --max-parallel=3
         env:
           DOCKER_BUILDKIT: 1
           INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
