@@ -61,6 +61,14 @@ build-original: ## Build using original rust.Dockerfile
 		--build-arg APP_NAME=$(APP_NAME) \
 		.
 
+.PHONY: build-langgraph
+build-langgraph: ## Build LangGraph application using centralized Dockerfile
+	docker build \
+		-f langgraph.Dockerfile \
+		-t $(IMAGE_NAME):$(TAG) \
+		--build-arg APP_NAME=$(APP_NAME) \
+		.
+
 .PHONY: build-all
 build-all: ## Build all Rust applications
 	@for app in $$(find apps -name "Cargo.toml" -exec dirname {} \; | xargs -I {} basename {}); do \
@@ -125,3 +133,4 @@ nx-run: ## Run using NX
 # make build APP_NAME=zerg_api
 # make push APP_NAME=zerg_api TAG=v1.0.0
 # make build-secure APP_NAME=zerg_api PLATFORM=linux/amd64
+# make build-langgraph APP_NAME=zerg/agent IMAGE_NAME=yurikrupnik/zerg-agent
