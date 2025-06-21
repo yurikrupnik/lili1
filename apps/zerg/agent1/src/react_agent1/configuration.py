@@ -7,7 +7,8 @@ from typing import Annotated
 
 from langchain_core.runnables import ensure_config
 from langgraph.config import get_config
-from services import SYSTEM_PROMPT_AGENT
+
+from . import prompts
 
 
 @dataclass(kw_only=True)
@@ -15,7 +16,7 @@ class Configuration:
     """The configuration for the agent."""
 
     system_prompt: str = field(
-        default=SYSTEM_PROMPT_AGENT,
+        default=prompts.SYSTEM_PROMPT,
         metadata={
             "description": "The system prompt to use for the agent's interactions. "
             "This prompt sets the context and behavior for the agent."
