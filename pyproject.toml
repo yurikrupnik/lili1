@@ -4,18 +4,34 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [ "python-shared", "zerg-job" ]
+dependencies = [
+  "python-shared",
+  "services",
+  "zerg-job",
+  "agent",
+  "agent1"
+]
 
 [tool.uv.sources.python-shared]
 workspace = true
 
+[tool.uv.sources.services]
+workspace = true
+
 [tool.uv.sources.zerg-job]
+workspace = true
+
+[tool.uv.sources.agent]
+workspace = true
+
+[tool.uv.sources.agent1]
 workspace = true
 
 [tool.uv.workspace]
 members = [
  "apps/zerg/job",
  "apps/zerg/agent",
+ "apps/zerg/agent1",
  "libs/python/shared",
  "libs/python/services",
 ]

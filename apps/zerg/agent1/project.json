@@ -1,0 +1,144 @@
+{
+  "name": "zerg-agent1",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/zerg/agent1",
+  "targets": {
+    "lock": {
+      "executor": "@nxlv/python:lock",
+      "options": {
+        "update": false
+      }
+    },
+    "sync": {
+      "executor": "@nxlv/python:sync",
+      "options": {}
+    },
+    "add": {
+      "executor": "@nxlv/python:add",
+      "options": {}
+    },
+    "update": {
+      "executor": "@nxlv/python:update",
+      "options": {}
+    },
+    "remove": {
+      "executor": "@nxlv/python:remove",
+      "options": {}
+    },
+    "build": {
+      "executor": "@nxlv/python:build",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "outputPath": "{projectRoot}/dist",
+        "publish": false,
+        "lockedVersions": true,
+        "bundleLocalDependencies": true
+      },
+      "cache": true
+    },
+    "lint": {
+      "executor": "@nxlv/python:ruff-check",
+      "outputs": [],
+      "options": {
+        "lintFilePatterns": [
+          "src"
+        ]
+      },
+      "cache": true
+    },
+    "format": {
+      "executor": "@nxlv/python:ruff-format",
+      "outputs": [],
+      "options": {
+        "filePatterns": [
+          "src"
+        ]
+      },
+      "cache": true
+    },
+    "test:unit": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": [
+        "{workspaceRoot}/reports/{projectRoot}/unittests",
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "command": "uv run pytest tests/unit_tests/",
+        "cwd": "{projectRoot}"
+      },
+      "cache": true
+    },
+    "test:integration": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": [
+        "{workspaceRoot}/reports/{projectRoot}/integrationtests",
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "command": "uv run pytest tests/integration_tests/",
+        "cwd": "{projectRoot}"
+      },
+      "cache": true
+    },
+    "install": {
+      "executor": "@nxlv/python:install",
+      "options": {
+        "silent": false,
+        "args": "",
+        "verbose": false,
+        "debug": false
+      }
+    },
+    "container": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/zerg/agent1",
+        "commands": [
+          "uv run langgraph build -t yurikrupnik/zerg-agent1:latest",
+          "docker tag yurikrupnik/zerg-agent1:latest yurikrupnik/zerg-agent1:${GITHUB_SHA:-dev}",
+          "docker push yurikrupnik/zerg-agent1:latest",
+          "docker push yurikrupnik/zerg-agent1:${GITHUB_SHA:-dev}"
+        ],
+        "parallel": false
+      },
+      "configurations": {
+        "production": {
+          "commands": [
+            "uv run langgraph build -t yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
+            "docker tag yurikrupnik/zerg-agent:${GITHUB_SHA::7} yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
+            "docker push yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
+            "docker push yurikrupnik/zerg-agent:${GITHUB_REF_NAME}"
+          ]
+        }
+      }
+    },
+    "trivy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["container"],
+      "options": {
+        "commands": [
+          "echo 'Scanning container image for vulnerabilities...'",
+          "trivy image --format table --severity HIGH,CRITICAL yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
+        ],
+        "parallel": false
+      },
+      "configurations": {
+        "production": {
+          "commands": [
+            "echo 'Scanning container image for vulnerabilities...'",
+            "trivy image --format table --severity HIGH,CRITICAL --exit-code 1 yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
+          ]
+        }
+      }
+    }
+  },
+  "tags": [],
+  "release": {
+    "version": {
+      "generator": "@nxlv/python:release-version"
+    }
+  }
+}
