@@ -72,9 +72,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build ALL containers using nx run-many (like your working example)
       - name: Container build
-        run: bun nx run-many --target=container --parallel --max-parallel=3
+        run: bun nx affected --target=container --parallel --max-parallel=3 --configuration=tag
         env:
           DOCKER_BUILDKIT: 1
           INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

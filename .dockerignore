@@ -188,7 +188,16 @@ __pycache__/
 *.pyd
 .Python
 .pytest_cache/
-uv.lock
+# Keep uv.lock for LangGraph builds
+# uv.lock
 
 # Test results
 test-results/
+
+# LangGraph specific
+**/build/
+**/dist/
+**/*.egg-info/
+**/test/
+**/tests/cassettes/
+**/static/

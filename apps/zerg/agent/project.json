@@ -93,24 +93,25 @@
       }
     },
     "container": {
-      "executor": "nx:run-commands",
+      "executor": "@nx-tools/nx-container:build",
       "options": {
-        "cwd": "apps/zerg/agent",
-        "commands": [
-          "uv run langgraph build -t yurikrupnik/zerg-agent:latest",
-          "docker tag yurikrupnik/zerg-agent:latest yurikrupnik/zerg-agent:${GITHUB_SHA:-dev}",
-          "docker push yurikrupnik/zerg-agent:latest",
-          "docker push yurikrupnik/zerg-agent:${GITHUB_SHA:-dev}"
+        "push": true,
+        "file": "./langgraph.Dockerfile",
+        "context": ".",
+        "build-args": [
+          "APP_NAME=zerg/agent"
         ],
-        "parallel": false
-      },
-      "configurations": {
-        "production": {
-          "commands": [
-            "uv run langgraph build -t yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
-            "docker tag yurikrupnik/zerg-agent:${GITHUB_SHA::7} yurikrupnik/zerg-agent:${GITHUB_REF_NAME}",
-            "docker push yurikrupnik/zerg-agent:${GITHUB_SHA::7}",
-            "docker push yurikrupnik/zerg-agent:${GITHUB_REF_NAME}"
+        "metadata": {
+          "images": [
+            "yurikrupnik/zerg-agent"
+          ],
+          "tags": [
+            "type=schedule",
+            "type=ref,event=branch",
+            "type=ref,event=tag",
+            "type=ref,event=pr",
+            "type=semver,pattern={{version}}",
+            "type=sha"
           ]
         }
       }
@@ -120,16 +121,25 @@
       "dependsOn": ["container"],
       "options": {
         "commands": [
+          "export SHORT_SHA=$(echo ${GITHUB_SHA:-dev} | cut -c1-7)",
           "echo 'Scanning container image for vulnerabilities...'",
-          "trivy image --format table --severity HIGH,CRITICAL yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
+          "trivy image --format table --severity HIGH,CRITICAL yurikrupnik/zerg-agent:$SHORT_SHA"
         ],
         "parallel": false
       },
       "configurations": {
         "production": {
           "commands": [
+            "export SHORT_SHA=$(echo ${GITHUB_SHA:-dev} | cut -c1-7)",
             "echo 'Scanning container image for vulnerabilities...'",
-            "trivy image --format table --severity HIGH,CRITICAL --exit-code 1 yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
+            "trivy image --format table --severity HIGH,CRITICAL --exit-code 1 yurikrupnik/zerg-agent:$SHORT_SHA"
+          ]
+        },
+        "tag": {
+          "commands": [
+            "export SHORT_SHA=$(echo ${GITHUB_SHA:-dev} | cut -c1-7)",
+            "echo 'Scanning container image for vulnerabilities...'",
+            "trivy image --format table --severity HIGH,CRITICAL --exit-code 1 yurikrupnik/zerg-agent:$SHORT_SHA"
           ]
         }
       }
