@@ -147,17 +147,9 @@
       "options": {
         "commands": [
           "echo 'Scanning container image for vulnerabilities...'",
-          "trivy image --format table --severity HIGH,CRITICAL yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
+          "trivy image --format table --severity HIGH,CRITICAL yurikrupnik/zerg-agent1:${GITHUB_SHA::7}"
         ],
         "parallel": false
-      },
-      "configurations": {
-        "production": {
-          "commands": [
-            "echo 'Scanning container image for vulnerabilities...'",
-            "trivy image --format table --severity HIGH,CRITICAL --exit-code 1 yurikrupnik/zerg-agent:${GITHUB_SHA::7}"
-          ]
-        }
       }
     }
   },

@@ -1,7 +1,7 @@
 # Reusable Dockerfile for LangGraph applications
 # Usage: docker build -f langgraph.Dockerfile --build-arg APP_NAME=agent -t agent:latest .
 
-FROM docker.io/langchain/langgraph-api:3.11
+FROM docker.io/langchain/langgraph-api:3.13-wolfi
 
 # Build argument for the app name
 ARG DIST
@@ -10,6 +10,7 @@ ENV APP_NAME=${APP_NAME}
 
 # Validate APP_NAME is provided
 RUN test -n "$APP_NAME" || (echo "APP_NAME build argument is required" && exit 1)
+RUN test -n "$DIST" || (echo "DIST build argument is required" && exit 1)
 
 # Set working directory
 WORKDIR /app
