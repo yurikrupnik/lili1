@@ -1,8 +1,8 @@
 {
-  "name": "zerg-agent",
+  "name": "agent1",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "sourceRoot": "apps/zerg/agent",
+  "sourceRoot": "apps/zerg/agent1",
   "targets": {
     "lock": {
       "executor": "@nxlv/python:lock",
@@ -87,7 +87,7 @@
     "validate-imports": {
       "executor": "@nxlv/python:run-commands",
       "options": {
-        "command": "uv run python -c \"import react_agent; import react_agent.configuration; import react_agent.graph; print('All imports successful')\"",
+        "command": "uv run python -c \"import react_agent1; import react_agent1.configuration; import react_agent1.graph; print('All imports successful')\"",
         "cwd": "{projectRoot}"
       },
       "cache": true
@@ -95,7 +95,7 @@
     "typecheck": {
       "executor": "@nxlv/python:run-commands",
       "options": {
-        "command": "uv run mypy src/react_agent --ignore-missing-imports",
+        "command": "uv run mypy src/react_agent1 --ignore-missing-imports",
         "cwd": "{projectRoot}"
       },
       "cache": true
@@ -117,12 +117,12 @@
         "file": "./langgraph.Dockerfile",
         "context": ".",
         "build-args": [
-          "APP_NAME=agent",
-          "DIST=apps/zerg/agent"
+          "APP_NAME=agent1",
+          "DIST=apps/zerg/agent1"
         ],
         "metadata": {
           "images": [
-            "yurikrupnik/zerg-agent"
+            "yurikrupnik/zerg-agent1"
           ],
           "tags": [
             "type=schedule",
