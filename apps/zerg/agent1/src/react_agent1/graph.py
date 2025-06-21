@@ -18,7 +18,7 @@ from .utils import load_chat_model
 # Define the function that calls the model
 
 
-async def call_model3(state: State) -> Dict[str, List[AIMessage]]:
+async def call_model11(state: State) -> Dict[str, List[AIMessage]]:
     """Call the LLM powering our "agent".
 
     This function prepares the prompt, initializes the model, and processes the response.
@@ -68,12 +68,12 @@ async def call_model3(state: State) -> Dict[str, List[AIMessage]]:
 builder = StateGraph(State, input=InputState, config_schema=Configuration)
 
 # Define the two nodes we will cycle between
-builder.add_node(call_model3)
+builder.add_node(call_model11)
 builder.add_node("tools", ToolNode(TOOLS))
 
-# Set the entrypoint as `call_model3`
+# Set the entrypoint as `call_model11`
 # This means that this node is the first one called
-builder.add_edge("__start__", "call_model3")
+builder.add_edge("__start__", "call_model11")
 
 
 def route_model_output(state: State) -> Literal["__end__", "tools"]:
@@ -99,17 +99,17 @@ def route_model_output(state: State) -> Literal["__end__", "tools"]:
     return "tools"
 
 
-# Add a conditional edge to determine the next step after `call_model3`
+# Add a conditional edge to determine the next step after `call_model11`
 builder.add_conditional_edges(
-    "call_model3",
-    # After call_model3 finishes running, the next node(s) are scheduled
+    "call_model11",
+    # After call_model11 finishes running, the next node(s) are scheduled
     # based on the output from route_model_output
     route_model_output,
 )
 
-# Add a normal edge from `tools` to `call_model3`
+# Add a normal edge from `tools` to `call_model11`
 # This creates a cycle: after using tools, we always return to the model
-builder.add_edge("tools", "call_model3")
+builder.add_edge("tools", "call_model11")
 
 # Compile the builder into an executable graph
 graph = builder.compile(name="ReAct Agent")
