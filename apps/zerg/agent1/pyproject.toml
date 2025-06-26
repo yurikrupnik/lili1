@@ -1,5 +1,5 @@
 [project]
-name = "agent"
+name = "agent1"
 version = "0.0.1"
 description = "Starter template for making a custom Reasoning and Action agent (using tool calling) in LangGraph."
 readme = "README.md"
@@ -13,7 +13,6 @@ dependencies = [
     "langchain-fireworks>=0.1.7",
     "python-dotenv>=1.0.1",
     "langchain-tavily>=0.1",
-    "services",
 ]
 
 
@@ -25,10 +24,10 @@ requires = ["setuptools>=73.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["langgraph.templates.react_agent", "react_agent"]
+packages = ["langgraph.templates.react_agent", "react_agent1"]
 [tool.setuptools.package-dir]
-"langgraph.templates.react_agent" = "src/react_agent"
-"react_agent" = "src/react_agent"
+"langgraph.templates.react_agent" = "src/react_agent1"
+"react_agent1" = "src/react_agent1"
 
 
 [tool.setuptools.package-data]
@@ -36,15 +35,15 @@ packages = ["langgraph.templates.react_agent", "react_agent"]
 
 [tool.ruff]
 lint.select = [
-    "E",    # pycodestyle
-    "F",    # pyflakes (includes F821 undefined name)
-    "I",    # isort
-    "D",    # pydocstyle
-    "D401", # First line should be in imperative mood
-    "T201",
-    "UP",
-    "N",    # pep8-naming
-    "B",    # flake8-bugbear (catches common bugs)
+  "E",    # pycodestyle
+  "F",    # pyflakes (includes F821 undefined name)
+  "I",    # isort
+  "D",    # pydocstyle
+  "D401", # First line should be in imperative mood
+  "T201",
+  "UP",
+  "N",    # pep8-naming
+  "B",    # flake8-bugbear (catches common bugs)
 ]
 lint.ignore = [
     "UP006",
@@ -60,15 +59,8 @@ lint.ignore = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-
-[tool.uv.sources]
-services = { workspace = true }
-
 [dependency-groups]
 dev = [
     "langgraph-cli[inmem]>=0.1.71",
     "pytest>=8.3.5",
-    "pytest-asyncio>=0.24.0",
 ]

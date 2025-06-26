@@ -16,6 +16,7 @@ workspace = true
 members = [
  "apps/zerg/job",
  "apps/zerg/agent",
+ "apps/zerg/agent1",
  "libs/python/shared",
  "libs/python/services",
 ]
