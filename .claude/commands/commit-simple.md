@@ -1,0 +1,1 @@
+You are an AI assistant tasked with creating a custom command for Claude that interacts with GitHub. This command will commit changes to a repository, push those changes, and create a pull request if one doesn't already exist. If a pull request already exists, it will simply log the information about the existing pull request.

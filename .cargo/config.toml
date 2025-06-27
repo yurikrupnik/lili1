@@ -1,2 +1,14 @@
 [build]
 target-dir = 'dist/target'
+[env]
+RUST_BACKTRACE = { value = "1", condition = { env_not_set = "RUST_BACKTRACE" } }
+#RUST_LOG = "web_server=debug,lib_core=debug,lib_auth=debug,lib_utils=debug"
+RUST_LOG = "info"
+RUST_ENV = "development"
+# DB's - must be set
+MONGO_URI = "mongodb://localhost:27017"
+REDIS_HOST = "redis://localhost:6379"
+DATABASE_URL = "postgres://myuser:mypassword@localhost/mydatabase"
+INFLUXDB_URL = "http://localhost:8086"
+INFLUXDB_TOKEN = "admintoken123"
+INFLUXDB_ORG_ID = "docs"

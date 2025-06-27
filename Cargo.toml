@@ -1,12 +1,80 @@
+#[lib]
+#name = "lili1"
+#path = "src/main.rs"
+#test = true
+#bench = true
+#doc = true
+#proc-macro = false
+#harness = true
+#crate-type = ["rlib", "dylib", "staticlib"]
+
 
 [workspace]
 resolver = '2'
-members = [
-	'libs/rust/services',
-	'apps/zerg/api',
-]
+members = ['libs/rust/services', 'apps/zerg/api']
 
 [workspace.dependencies]
+services = { workspace = true, path = "libs/rust/services" }
+#models = { workspace = true, path = "libs/rust/models" }
+#f1 = { workspace = true, path = "libs/rust/f1" }
+#f2 = { workspace = true, path = "libs/rust/f2" }
+#reqwest = { version = '0.12', features = ['json', 'default-tls'] }
+strum = { version = '0.27', features = ['derive'] }
+anyhow = '1.0'
+axum = { version = "0.8", features = ["default", "ws", "tracing"] }
+axum-extra = { version = '0.10', features = ['typed-header'] }
+http = { version = '1.2', features = ['default'] }
+clap = { version = '4.5', features = ['derive'] }
+utoipa = { version = '5.2', features = ['uuid', 'macros'] }
+utoipa-swagger-ui = { version = '9.0.0', features = ['axum'] }
+utoipa-redoc = { version = '6.0.0', features = ['axum'] }
+utoipa-rapidoc = { version = '6.0.0', features = ['axum'] }
+utoipa-scalar = { version = '0.3.0', features = ['axum'] }
+serde = { version = '1.0', features = ['derive'] }
+serde_json = { version = '1.0' }
+tower = { version = '0.5', features = ['util'] }
+tokio = { version = "1.45", features = ["full"] }
+tokio-stream = '0.1'
+tracing = { version = "0.1", features = ["attributes"] }
+tracing-subscriber = "0.3.19"
+futures-util = { version = "0.3", default-features = false, features = [
+  "sink",
+  "std",
+] }
+uuid = { version = '1.10', features = ['serde', 'v4'] }
+influxdb2 = { version = '0.5.2', features = ['rustls'] }
+influxdb2-derive = '0.1.1'
+influxdb2-structmap = '0.2.0'
+tonic = { version = '0.13', features = [
+  'router',
+  'default',
+  'prost',
+  'server',
+] }
+prost = { version = '0.14', features = ['default'] }
+thiserror = '2.0'
+validator = { version = '0.20', features = ['derive'] }
+ts-rs = { version = '11.0', features = ['serde-compat'] }
+mongodb = { version = '3.2', features = ['default'] }
+redis = { version = '0.32', features = ['aio', 'r2d2', 'tokio-comp'] }
+sqlx = { version = '0.8.3', default-features = false, features = [
+  'postgres',
+  'runtime-tokio-rustls',
+  'macros',
+  'uuid',
+  'chrono',
+  'migrate',
+] }
+bb8-redis = { version = '0.24', features = ['default'] }
+bb8 = { version = '0.9', features = ['default'] }
+r2d2 = { version = "0.8", features = [] }
+crossterm = { version = '0.29.0', default-features = false, features = [
+  'serde',
+] }
+eyre = { version = '0.6.12', features = ['default'] }
+k8s-openapi = { version = '0.25', features = ['latest'] }
+kube = { version = '1.1.0', features = ['derive', 'runtime'] }
+fake = { version = '4.3', features = ['derive', 'time', 'uuid', 'http'] }
 
 [workspace.lints.rust]
 unsafe_code = 'forbid'

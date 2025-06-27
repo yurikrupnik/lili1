@@ -101,6 +101,7 @@ clean: ## Clean up Docker resources
 
 .PHONY: clean-all
 clean-all: ## Clean up all Docker resources (including images)
+	cargo clean
 	docker system prune -af
 	docker volume prune -f
 

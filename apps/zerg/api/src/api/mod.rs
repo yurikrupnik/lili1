@@ -1,3 +1,6 @@
+pub mod todo;
+pub mod error;
+
 // use crate::app_state::AppState;
 // use axum::{routing::get, Router};
 // use book::router::router as book_router;
@@ -10,7 +13,7 @@
 // use task_redis_response::router::router as task_redis_response_router;
 // use todo::router::router as todo_router;
 // use tokio::time::sleep;
-// 
+//
 // pub mod book;
 // pub mod operations;
 // pub mod sql_book;
@@ -20,7 +23,7 @@
 // pub mod task_redis_response;
 // pub mod todo;
 // mod todo;
-// 
+//
 // pub fn routes() -> Router<AppState> {
 //   Router::new()
 //     .merge(todo_router())

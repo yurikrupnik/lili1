@@ -1,20 +1,31 @@
 mod shared;
 
 use axum::{response::Html, routing::get, Router};
-use shared::Env;
+use shared::{Env, ConfigProps};
 
 #[tokio::main]
 async fn main() {
+  // const config: ConfigProps = ConfigProps::new().unwrap();
   // build our application with a route
   let app = Router::new().route("/", get(handler));
 
   // run it
-  let listener = tokio::net::TcpListener::bind(Env::get_url())
+  let listener = tokio::net::TcpListener::bind(Env::get_url().unwrap())
     .await
     .unwrap();
   println!("listening on {}", listener.local_addr().unwrap());
   axum::serve(listener, app).await.unwrap();
+  // Initialize the application
+  // if let Err(e) = run().await {
+  //   eprintln!("Application error: {}", e);
+  //   std::process::exit(1);
+  // }
+  // Ok(())
 }
+
+// async fn run() -> Result<()> {
+//   println!("Hello, world!");
+// }
 
 async fn handler() -> Html<&'static str> {
   Html("<h1>Hello, World!!</h1>")
