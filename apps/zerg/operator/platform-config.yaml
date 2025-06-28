@@ -1,0 +1,182 @@
+apiVersion: zerg.io/v1
+kind: DependencyManager
+metadata:
+  name: platform-infrastructure
+  namespace: zerg-system
+spec:
+  dependencies:
+    # Core Infrastructure - Install order matters
+    - name: cert-manager
+      type: helm
+      enabled: true
+      source:
+        repo: https://charts.jetstack.io
+        chart: cert-manager
+      version: v1.13.0
+      namespace: cert-manager
+      values:
+        installCRDs: true
+        global:
+          logLevel: 2
+          
+    - name: crossplane
+      type: helm
+      enabled: true
+      source:
+        repo: https://charts.crossplane.io/stable
+        chart: crossplane
+      version: 1.14.5
+      namespace: crossplane-system
+      depends_on:
+        - cert-manager
+      values:
+        args:
+          - --enable-composition-revisions
+        resourcesCrossplane:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+            
+    - name: external-secrets
+      type: helm
+      enabled: true
+      source:
+        repo: https://charts.external-secrets.io
+        chart: external-secrets
+      version: 0.9.11
+      namespace: external-secrets-system
+      depends_on:
+        - cert-manager
+      values:
+        installCRDs: true
+        webhook:
+          certManager:
+            enabled: true
+            
+    # Observability Stack
+    - name: prometheus-stack
+      type: helm
+      enabled: true
+      source:
+        repo: https://prometheus-community.github.io/helm-charts
+        chart: kube-prometheus-stack
+      version: 55.5.0
+      namespace: monitoring
+      depends_on:
+        - cert-manager
+      values:
+        grafana:
+          enabled: true
+          adminPassword: admin123
+          persistence:
+            enabled: true
+            size: 10Gi
+        prometheus:
+          prometheusSpec:
+            retention: 15d
+            resources:
+              requests:
+                memory: 512Mi
+                cpu: 100m
+        alertmanager:
+          enabled: true
+          
+    - name: loki-stack
+      type: helm
+      enabled: true
+      source:
+        repo: https://grafana.github.io/helm-charts
+        chart: loki-stack
+      version: 2.9.11
+      namespace: loki-system
+      depends_on:
+        - prometheus-stack
+      values:
+        loki:
+          enabled: true
+          persistence:
+            enabled: true
+            size: 10Gi
+        promtail:
+          enabled: true
+        grafana:
+          enabled: false  # Use the one from prometheus-stack
+        prometheus:
+          enabled: false  # Use the one from prometheus-stack
+          
+  # GitOps Configuration
+  gitops:
+    provider: flux
+    repository: https://github.com/fluxcd/flux2-kustomize-helm-example
+    branch: main
+    path: clusters/staging
+    sync_policy:
+      automated: true
+      prune: true
+      self_heal: true
+      
+  # CI/CD Pipeline Configuration
+  cicd:
+    provider: tekton
+    pipelines:
+      - name: platform-validation
+        trigger:
+          schedule: "0 6 * * *"  # Daily at 6 AM
+          manual: true
+        steps:
+          - name: cluster-health-check
+            image: bitnami/kubectl:latest
+            commands:
+              - kubectl get nodes
+              - kubectl get pods --all-namespaces
+              - kubectl top nodes
+            working_dir: /workspace
+            
+          - name: crossplane-status
+            image: crossplane/crossplane-cli:latest
+            commands:
+              - kubectl get crossplane
+              - kubectl get providers
+              - kubectl get compositions
+            working_dir: /workspace
+            
+          - name: security-scan
+            image: aquasec/kube-bench:latest
+            commands:
+              - kube-bench run --targets master,node
+            working_dir: /workspace
+            
+      - name: application-deployment
+        trigger:
+          git:
+            repository: https://github.com/your-org/applications
+            branches:
+              - main
+              - staging
+            events:
+              - push
+          manual: true
+        steps:
+          - name: validate-manifests
+            image: alpine/k8s:latest
+            commands:
+              - kubectl --dry-run=client apply -f manifests/
+            working_dir: /workspace
+            
+          - name: deploy-applications
+            image: alpine/k8s:latest
+            commands:
+              - kubectl apply -f manifests/
+            working_dir: /workspace
+            env:
+              KUBECONFIG: /etc/kubeconfig
+              
+          - name: verify-deployment
+            image: alpine/k8s:latest
+            commands:
+              - kubectl rollout status deployment/app-deployment
+              - kubectl get pods -l app=myapp
+            working_dir: /workspace

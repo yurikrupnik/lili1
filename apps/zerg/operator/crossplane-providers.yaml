@@ -1,0 +1,16 @@
+apiVersion: zerg.io/v1
+kind: DependencyManager
+metadata:
+  name: crossplane-providers
+  namespace: zerg-system
+spec:
+  dependencies:
+    # Crossplane Providers
+    - name: crossplane-providers
+      type: yaml
+      enabled: true
+      source:
+        repo: https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/examples/provider-aws.yaml
+      namespace: crossplane-system
+      depends_on:
+        - crossplane

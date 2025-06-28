@@ -1,0 +1,113 @@
+apiVersion: zerg.io/v1
+kind: DependencyManager
+metadata:
+  name: basic-platform-setup
+  namespace: zerg-system
+spec:
+  dependencies:
+    - name: cert-manager
+      type: operator
+      enabled: true
+      source:
+        repo: https://charts.jetstack.io
+        chart: cert-manager
+      version: v1.13.0
+      namespace: cert-manager
+      values:
+        installCRDs: true
+        
+    - name: external-secrets
+      type: operator
+      enabled: true
+      source:
+        repo: https://charts.external-secrets.io
+        chart: external-secrets
+      version: 0.9.0
+      namespace: external-secrets-system
+      depends_on:
+        - cert-manager
+        
+    - name: crossplane
+      type: operator
+      enabled: true
+      source:
+        repo: https://charts.crossplane.io/stable
+        chart: crossplane
+      version: 1.14.0
+      namespace: crossplane-system
+      depends_on:
+        - cert-manager
+        
+    - name: prometheus
+      type: helm
+      enabled: true
+      source:
+        repo: https://prometheus-community.github.io/helm-charts
+        chart: kube-prometheus-stack
+      version: 55.0.0
+      namespace: monitoring
+      values:
+        grafana:
+          adminPassword: "admin"
+        prometheus:
+          prometheusSpec:
+            retention: "30d"
+            
+    - name: loki
+      type: helm
+      enabled: true
+      source:
+        repo: https://grafana.github.io/helm-charts
+        chart: loki-stack
+      version: 2.9.0
+      namespace: loki-system
+      depends_on:
+        - prometheus
+      values:
+        grafana:
+          enabled: false  # Use the one from prometheus stack
+        prometheus:
+          enabled: false  # Use the one from prometheus stack
+          
+  gitops:
+    provider: flux
+    repository: https://github.com/your-org/gitops-repo
+    branch: main
+    path: clusters/production
+    sync_policy:
+      automated: true
+      prune: true
+      self_heal: true
+      
+  cicd:
+    provider: tekton
+    pipelines:
+      - name: build-and-deploy
+        trigger:
+          git:
+            repository: https://github.com/your-org/app-repo
+            branches:
+              - main
+              - develop
+            events:
+              - push
+              - pull_request
+          manual: true
+        steps:
+          - name: build
+            image: docker:latest
+            commands:
+              - docker build -t myapp:latest .
+            env:
+              DOCKER_BUILDKIT: "1"
+          - name: test
+            image: golang:1.21
+            commands:
+              - go test ./...
+            working_dir: /workspace
+          - name: deploy
+            image: kubectl:latest
+            commands:
+              - kubectl apply -f k8s/
+            env:
+              KUBECONFIG: /etc/kubeconfig

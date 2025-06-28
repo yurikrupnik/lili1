@@ -1,0 +1,23 @@
+apiVersion: zerg.io/v1
+kind: DependencyManager
+metadata:
+  name: gitops-test
+  namespace: default
+spec:
+  dependencies:
+    - name: test-app
+      type: yaml
+      enabled: true
+      source:
+        repo: "https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/service/nginx-service.yaml"
+      namespace: default
+      
+  gitops:
+    provider: flux
+    repository: https://github.com/fluxcd/flux2-kustomize-helm-example
+    branch: main
+    path: clusters/staging
+    sync_policy:
+      automated: true
+      prune: true
+      self_heal: true

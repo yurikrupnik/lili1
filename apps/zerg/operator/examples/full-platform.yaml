@@ -1,0 +1,264 @@
+apiVersion: zerg.io/v1
+kind: DependencyManager
+metadata:
+  name: full-platform-stack
+  namespace: zerg-system
+spec:
+  dependencies:
+    # Core Infrastructure
+    - name: cert-manager
+      type: operator
+      enabled: true
+      source:
+        repo: https://charts.jetstack.io
+        chart: cert-manager
+      version: v1.13.0
+      namespace: cert-manager
+      values:
+        installCRDs: true
+        
+    - name: external-secrets
+      type: operator
+      enabled: true
+      source:
+        repo: https://charts.external-secrets.io
+        chart: external-secrets
+      version: 0.9.0
+      namespace: external-secrets-system
+      depends_on:
+        - cert-manager
+        
+    - name: crossplane
+      type: operator
+      enabled: true
+      source:
+        repo: https://charts.crossplane.io/stable
+        chart: crossplane
+      version: 1.14.0
+      namespace: crossplane-system
+      depends_on:
+        - cert-manager
+      values:
+        resourcesCrossplane:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+            
+    # Observability Stack
+    - name: prometheus
+      type: helm
+      enabled: true
+      source:
+        repo: https://prometheus-community.github.io/helm-charts
+        chart: kube-prometheus-stack
+      version: 55.0.0
+      namespace: monitoring
+      values:
+        grafana:
+          adminPassword: "admin123"
+          persistence:
+            enabled: true
+            size: 10Gi
+        prometheus:
+          prometheusSpec:
+            retention: "30d"
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 50Gi
+                      
+    - name: loki
+      type: helm
+      enabled: true
+      source:
+        repo: https://grafana.github.io/helm-charts
+        chart: loki-stack
+      version: 2.9.0
+      namespace: loki-system
+      depends_on:
+        - prometheus
+      values:
+        grafana:
+          enabled: false  # Use the one from prometheus stack
+        prometheus:
+          enabled: false  # Use the one from prometheus stack
+        loki:
+          persistence:
+            enabled: true
+            size: 100Gi
+            
+    # Service Mesh (optional)
+    - name: istio-base
+      type: helm
+      enabled: false
+      source:
+        repo: https://istio-release.storage.googleapis.com/charts
+        chart: base
+      version: 1.20.0
+      namespace: istio-system
+      
+    - name: istiod
+      type: helm
+      enabled: false
+      source:
+        repo: https://istio-release.storage.googleapis.com/charts
+        chart: istiod
+      version: 1.20.0
+      namespace: istio-system
+      depends_on:
+        - istio-base
+        
+  gitops:
+    provider: flux
+    repository: https://github.com/your-org/k8s-gitops
+    branch: main
+    path: clusters/production
+    sync_policy:
+      automated: true
+      prune: true
+      self_heal: true
+      
+  cicd:
+    provider: tekton
+    pipelines:
+      # Application Build Pipeline
+      - name: app-build-pipeline
+        trigger:
+          git:
+            repository: https://github.com/your-org/microservice-app
+            branches:
+              - main
+              - develop
+              - "release/*"
+            events:
+              - push
+              - pull_request
+          manual: true
+        steps:
+          - name: git-clone
+            image: alpine/git:latest
+            commands:
+              - git clone $GIT_REPO .
+              - git checkout $GIT_REVISION
+            env:
+              GIT_REPO: "$(params.git-repo-url)"
+              GIT_REVISION: "$(params.git-revision)"
+              
+          - name: security-scan
+            image: aquasec/trivy:latest
+            commands:
+              - trivy fs --exit-code 1 --severity HIGH,CRITICAL .
+            working_dir: /workspace
+            
+          - name: unit-tests
+            image: golang:1.21
+            commands:
+              - go mod download
+              - go test -v ./...
+              - go test -coverprofile=coverage.out ./...
+            working_dir: /workspace
+            env:
+              CGO_ENABLED: "0"
+              
+          - name: build-image
+            image: gcr.io/kaniko-project/executor:latest
+            commands:
+              - /kaniko/executor --dockerfile=Dockerfile --destination=$IMAGE_REPO:$IMAGE_TAG --context=.
+            env:
+              IMAGE_REPO: "your-registry/microservice-app"
+              IMAGE_TAG: "$(params.git-revision)"
+              
+          - name: security-scan-image
+            image: aquasec/trivy:latest
+            commands:
+              - trivy image --exit-code 1 --severity HIGH,CRITICAL $IMAGE_REPO:$IMAGE_TAG
+            env:
+              IMAGE_REPO: "your-registry/microservice-app"
+              IMAGE_TAG: "$(params.git-revision)"
+              
+          - name: update-gitops
+            image: alpine/git:latest
+            commands:
+              - git clone $GITOPS_REPO gitops
+              - cd gitops
+              - sed -i "s|image:.*|image: $IMAGE_REPO:$IMAGE_TAG|" $MANIFEST_PATH
+              - git config user.email "ci@company.com"
+              - git config user.name "CI Pipeline"
+              - git add .
+              - git commit -m "Update image to $IMAGE_TAG [skip ci]"
+              - git push
+            env:
+              GITOPS_REPO: "https://github.com/your-org/k8s-gitops"
+              MANIFEST_PATH: "apps/microservice/deployment.yaml"
+              IMAGE_REPO: "your-registry/microservice-app"
+              IMAGE_TAG: "$(params.git-revision)"
+              
+      # Infrastructure Pipeline
+      - name: infrastructure-pipeline
+        trigger:
+          git:
+            repository: https://github.com/your-org/infrastructure
+            branches:
+              - main
+            events:
+              - push
+          schedule: "0 2 * * *"  # Daily at 2 AM
+          manual: true
+        steps:
+          - name: terraform-plan
+            image: hashicorp/terraform:latest
+            commands:
+              - terraform init
+              - terraform plan -out=tfplan
+            working_dir: /workspace/terraform
+            env:
+              TF_VAR_environment: "production"
+              
+          - name: terraform-apply
+            image: hashicorp/terraform:latest
+            commands:
+              - terraform apply -auto-approve tfplan
+            working_dir: /workspace/terraform
+            env:
+              TF_VAR_environment: "production"
+              
+          - name: crossplane-config
+            image: crossplane/crossplane-cli:latest
+            commands:
+              - kubectl apply -f crossplane/providers/
+              - kubectl apply -f crossplane/compositions/
+            working_dir: /workspace
+            
+      # Security Compliance Pipeline
+      - name: security-compliance
+        trigger:
+          schedule: "0 6 * * 1"  # Weekly on Monday at 6 AM
+          manual: true
+        steps:
+          - name: cluster-security-scan
+            image: aquasec/kube-bench:latest
+            commands:
+              - kube-bench run --targets master,node,etcd,policies
+              
+          - name: vulnerability-scan
+            image: aquasec/kube-hunter:latest
+            commands:
+              - kube-hunter --pod
+              
+          - name: policy-validation
+            image: openpolicyagent/conftest:latest
+            commands:
+              - conftest verify --policy security-policies/ manifests/
+              
+          - name: compliance-report
+            image: alpine:latest
+            commands:
+              - echo "Generating compliance report..."
+              - date > /workspace/compliance-$(date +%Y%m%d).txt
+              - echo "Security scan completed" >> /workspace/compliance-$(date +%Y%m%d).txt

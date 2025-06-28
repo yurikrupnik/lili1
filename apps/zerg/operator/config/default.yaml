@@ -1,0 +1,86 @@
+operator:
+  default_namespace: "zerg-system"
+  reconciliation_interval: 300
+  max_concurrent_reconciles: 5
+  metrics_enabled: true
+  metrics_port: 8080
+
+dependency_templates:
+  external-secrets:
+    name: "external-secrets"
+    description: "External Secrets Operator for managing secrets from external systems"
+    type_: "operator"
+    repo: "https://charts.external-secrets.io"
+    chart: "external-secrets"
+    version: "0.9.0"
+    namespace: "external-secrets-system"
+    
+  crossplane:
+    name: "crossplane"
+    description: "Crossplane for infrastructure as code"
+    type_: "operator"
+    repo: "https://charts.crossplane.io/stable"
+    chart: "crossplane"
+    version: "1.14.0"
+    namespace: "crossplane-system"
+    
+  loki:
+    name: "loki"
+    description: "Loki logging stack"
+    type_: "helm"
+    repo: "https://grafana.github.io/helm-charts"
+    chart: "loki-stack"
+    version: "2.9.0"
+    namespace: "loki-system"
+    values:
+      grafana:
+        enabled: true
+      prometheus:
+        enabled: true
+        
+  prometheus:
+    name: "prometheus"
+    description: "Prometheus monitoring stack"
+    type_: "helm"
+    repo: "https://prometheus-community.github.io/helm-charts"
+    chart: "kube-prometheus-stack"
+    version: "55.0.0"
+    namespace: "monitoring"
+    
+  cert-manager:
+    name: "cert-manager"
+    description: "Certificate management for Kubernetes"
+    type_: "helm"
+    repo: "https://charts.jetstack.io"
+    chart: "cert-manager"
+    version: "v1.13.0"
+    namespace: "cert-manager"
+    values:
+      installCRDs: true
+
+gitops_templates:
+  flux:
+    name: "flux"
+    provider: "flux"
+    config:
+      interval: "5m"
+      prune: true
+      
+  argocd:
+    name: "argocd"
+    provider: "argocd"
+    config:
+      automated: true
+      prune: true
+      selfHeal: true
+
+cicd_templates:
+  tekton:
+    name: "tekton"
+    provider: "tekton"
+    config: {}
+    
+  argo-workflows:
+    name: "argo-workflows"
+    provider: "argo-workflows"
+    config: {}

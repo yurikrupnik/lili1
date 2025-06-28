@@ -1,0 +1,38 @@
+{
+  "name": "zerg-operator",
+  "root": "apps/zerg/operator",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@monodon/rust:build",
+      "options": {
+        "target": "x86_64-unknown-linux-gnu"
+      }
+    },
+    "test": {
+      "executor": "@monodon/rust:test"
+    },
+    "lint": {
+      "executor": "@monodon/rust:clippy"
+    },
+    "docker-build": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "docker build -t zerg-operator:latest .",
+        "cwd": "apps/zerg/operator"
+      }
+    },
+    "deploy": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "commands": [
+          "kubectl apply -f k8s/crd.yaml",
+          "kubectl apply -f k8s/deployment.yaml"
+        ],
+        "cwd": "apps/zerg/operator",
+        "parallel": false
+      }
+    }
+  },
+  "tags": ["zerg", "operator", "kubernetes"]
+}

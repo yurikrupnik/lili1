@@ -1,0 +1,38 @@
+FROM rust:1.83 as builder
+
+WORKDIR /workspace
+
+# Copy workspace files
+COPY Cargo.toml Cargo.lock ./
+COPY libs ./libs
+COPY apps/zerg/api ./apps/zerg/api
+COPY apps/zerg/operator ./apps/zerg/operator
+
+# Build the operator
+RUN cargo build --release --bin zerg-operator
+
+# Runtime image
+FROM debian:12-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && chmod +x kubectl \
+    && mv kubectl /usr/local/bin/
+
+# Install helm
+RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Copy the binary
+COPY --from=builder /workspace/target/release/zerg-operator /usr/local/bin/zerg-operator
+
+# Create non-root user
+RUN useradd -r -u 1000 -m operator
+USER operator
+
+ENTRYPOINT ["/usr/local/bin/zerg-operator"]

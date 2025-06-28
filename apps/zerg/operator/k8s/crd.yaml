@@ -1,0 +1,205 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: dependencymanagers.zerg.io
+spec:
+  group: zerg.io
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              dependencies:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    type:
+                      type: string
+                      enum: ["helm", "kustomize", "yaml", "operator"]
+                    source:
+                      type: object
+                      properties:
+                        repo:
+                          type: string
+                        chart:
+                          type: string
+                        path:
+                          type: string
+                        ref:
+                          type: string
+                      required: ["repo"]
+                    version:
+                      type: string
+                    namespace:
+                      type: string
+                    values:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    depends_on:
+                      type: array
+                      items:
+                        type: string
+                    enabled:
+                      type: boolean
+                      default: true
+                  required: ["name", "type", "source"]
+              gitops:
+                type: object
+                properties:
+                  provider:
+                    type: string
+                    enum: ["flux", "argocd"]
+                  repository:
+                    type: string
+                  branch:
+                    type: string
+                  path:
+                    type: string
+                  sync_policy:
+                    type: object
+                    properties:
+                      automated:
+                        type: boolean
+                      self_heal:
+                        type: boolean
+                      prune:
+                        type: boolean
+                required: ["provider", "repository", "branch", "path"]
+              cicd:
+                type: object
+                properties:
+                  provider:
+                    type: string
+                    enum: ["tekton", "argo-workflows"]
+                  pipelines:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        trigger:
+                          type: object
+                          properties:
+                            git:
+                              type: object
+                              properties:
+                                repository:
+                                  type: string
+                                branches:
+                                  type: array
+                                  items:
+                                    type: string
+                                events:
+                                  type: array
+                                  items:
+                                    type: string
+                            schedule:
+                              type: string
+                            manual:
+                              type: boolean
+                        steps:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              image:
+                                type: string
+                              commands:
+                                type: array
+                                items:
+                                  type: string
+                              env:
+                                type: object
+                                additionalProperties:
+                                  type: string
+                              working_dir:
+                                type: string
+                            required: ["name", "image", "commands"]
+                      required: ["name", "trigger", "steps"]
+                required: ["provider", "pipelines"]
+          status:
+            type: object
+            properties:
+              phase:
+                type: string
+                enum: ["Pending", "Installing", "Ready", "Failed", "Updating"]
+              dependencies:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    status:
+                      type: string
+                      enum: ["Pending", "Installing", "Installed", "Failed", "Updating", "Uninstalling"]
+                    version:
+                      type: string
+                    last_updated:
+                      type: string
+                    error:
+                      type: string
+              gitops_status:
+                type: object
+                properties:
+                  provider:
+                    type: string
+                  sync_status:
+                    type: string
+                  last_sync:
+                    type: string
+              cicd_status:
+                type: object
+                properties:
+                  provider:
+                    type: string
+                  pipelines:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        status:
+                          type: string
+                        last_run:
+                          type: string
+              last_reconciled:
+                type: string
+              conditions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                    last_transition_time:
+                      type: string
+                    reason:
+                      type: string
+                    message:
+                      type: string
+    subresources:
+      status: {}
+  scope: Namespaced
+  names:
+    plural: dependencymanagers
+    singular: dependencymanager
+    kind: DependencyManager
+    shortNames:
+    - dm
+    - deps

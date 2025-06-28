@@ -1,0 +1,10 @@
+operator:
+  default_namespace: "zerg-system"
+  reconciliation_interval: 60
+  max_concurrent_reconciles: 2
+  metrics_enabled: true
+  metrics_port: 8080
+
+dependency_templates: {}
+gitops_templates: {}
+cicd_templates: {}

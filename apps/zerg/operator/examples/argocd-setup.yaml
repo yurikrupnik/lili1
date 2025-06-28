@@ -1,0 +1,89 @@
+apiVersion: zerg.io/v1
+kind: DependencyManager
+metadata:
+  name: argocd-platform-setup
+  namespace: zerg-system
+spec:
+  dependencies:
+    - name: external-secrets
+      type: operator
+      enabled: true
+      source:
+        repo: https://charts.external-secrets.io
+        chart: external-secrets
+      version: 0.9.0
+      namespace: external-secrets-system
+        
+    - name: crossplane
+      type: operator
+      enabled: true
+      source:
+        repo: https://charts.crossplane.io/stable
+        chart: crossplane
+      version: 1.14.0
+      namespace: crossplane-system
+        
+    - name: loki
+      type: helm
+      enabled: true
+      source:
+        repo: https://grafana.github.io/helm-charts
+        chart: loki-stack
+      version: 2.9.0
+      namespace: loki-system
+      values:
+        grafana:
+          enabled: true
+          adminPassword: "admin123"
+        prometheus:
+          enabled: true
+          
+  gitops:
+    provider: argocd
+    repository: https://github.com/your-org/gitops-manifests
+    branch: main
+    path: environments/staging
+    sync_policy:
+      automated: true
+      prune: true
+      self_heal: true
+      
+  cicd:
+    provider: argo-workflows
+    pipelines:
+      - name: ci-pipeline
+        trigger:
+          git:
+            repository: https://github.com/your-org/microservice
+            branches:
+              - main
+            events:
+              - push
+        steps:
+          - name: checkout
+            image: alpine/git:latest
+            commands:
+              - git clone $REPO_URL .
+              
+          - name: build
+            image: docker:dind
+            commands:
+              - docker build -t $IMAGE_TAG .
+              - docker push $IMAGE_TAG
+            env:
+              DOCKER_HOST: "tcp://localhost:2376"
+              
+          - name: security-scan
+            image: aquasec/trivy:latest
+            commands:
+              - trivy image $IMAGE_TAG
+              
+          - name: update-manifest
+            image: alpine/git:latest
+            commands:
+              - git clone $GITOPS_REPO gitops
+              - cd gitops
+              - sed -i "s|image:.*|image: $IMAGE_TAG|" $MANIFEST_PATH
+              - git add .
+              - git commit -m "Update image to $IMAGE_TAG"
+              - git push

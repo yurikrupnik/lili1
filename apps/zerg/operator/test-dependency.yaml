@@ -1,0 +1,13 @@
+apiVersion: zerg.io/v1
+kind: DependencyManager
+metadata:
+  name: test-setup
+  namespace: default
+spec:
+  dependencies:
+    - name: test-nginx
+      type: yaml
+      enabled: true
+      source:
+        repo: "https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/application/deployment.yaml"
+      namespace: default
