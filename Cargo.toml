@@ -11,7 +11,7 @@
 
 [workspace]
 resolver = '2'
-members = ['libs/rust/services', 'apps/zerg/api']
+members = ['libs/rust/services', 'apps/zerg/api', 'apps/zerg/operator']
 
 [workspace.dependencies]
 services = { workspace = true, path = "libs/rust/services" }
@@ -75,6 +75,8 @@ eyre = { version = '0.6.12', features = ['default'] }
 k8s-openapi = { version = '0.25', features = ['latest'] }
 kube = { version = '1.1.0', features = ['derive', 'runtime'] }
 fake = { version = '4.3', features = ['derive', 'time', 'uuid', 'http'] }
+chrono = { version = '0.4', features = ['serde'] }
+serde_yaml = '0.9'
 
 [workspace.lints.rust]
 unsafe_code = 'forbid'
