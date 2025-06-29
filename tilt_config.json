@@ -1,0 +1,14 @@
+{
+  "feature_flags": {
+    "snapshots": true
+  },
+  "analytics_opt": "opt-out",
+  "max_parallel_updates": 3,
+  "default_to_tilt_ui": true,
+  "experimental": {
+    "watch_dirs": [
+      "apps/",
+      "libs/"
+    ]
+  }
+}

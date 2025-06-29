@@ -1,23 +1,79 @@
 mod shared;
 
-use axum::{response::Html, routing::get, Router};
-use shared::Env;
+use axum::{response::Html, routing::get, Json, Router};
+use eyre::Result;
+use rust_services::{envs::Env, model::task::Task, tracing::init_tracing};
 
 #[tokio::main]
-async fn main() {
-  // build our application with a route
-  let app = Router::new().route("/", get(handler));
+async fn main() -> Result<()> {
+    dotenvy::dotenv().ok();
+    init_tracing();
+    tracing::info!("Starting API server");
 
-  // run it
-  let listener = tokio::net::TcpListener::bind(Env::get_url())
-    .await
-    .unwrap();
-  println!("listening on {}", listener.local_addr().unwrap());
-  axum::serve(listener, app).await.unwrap();
+    let app_router = Router::new()
+        .route("/", get(handler))
+        .route("/tasks", get(get_tasks));
+    let url = Env::get_url().map_err(|e| eyre::eyre!("Failed to get URL: {}", e))?;
+    let listener = tokio::net::TcpListener::bind(&url).await?;
+
+    tracing::info!("Server listening on {}", listener.local_addr()?);
+
+    axum::serve(listener, app_router)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+
+    Ok(())
 }
 
 async fn handler() -> Html<&'static str> {
-  Html("<h1>Hello, World!!</h1>")
+    Html("<h1>Hello, World from Local Services!</h1>")
+}
+
+async fn get_tasks() -> Json<Vec<Task>> {
+    use uuid::Uuid;
+
+    let sample_tasks = vec![
+        Task {
+            id: Uuid::new_v4(),
+            title: "Setup local services".to_string(),
+            description: Some("Integrate local services into the API app".to_string()),
+            completed: true,
+        },
+        Task {
+            id: Uuid::new_v4(),
+            title: "Add task routes".to_string(),
+            description: Some("Create REST API endpoints for tasks".to_string()),
+            completed: false,
+        },
+    ];
+
+    Json(sample_tasks)
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    tracing::info!("Signal received, starting graceful shutdown");
 }
 
 // // #![deny(clippy::unwrap_used)]

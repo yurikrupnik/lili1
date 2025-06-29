@@ -1,0 +1,43 @@
+{
+  "name": "models_book",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/models/book/src",
+  "targets": {
+    "build": {
+      "executor": "@monodon/rust:check",
+      "outputs": [
+        "{options.target-dir}"
+      ],
+      "options": {
+        "target-dir": "dist/target/models_book"
+      }
+    },
+    "test": {
+      "cache": true,
+      "executor": "@monodon/rust:test",
+      "outputs": [
+        "{options.target-dir}"
+      ],
+      "options": {
+        "target-dir": "dist/target/models_book"
+      },
+      "configurations": {
+        "production": {
+          "release": true
+        }
+      }
+    },
+    "lint": {
+      "cache": true,
+      "executor": "@monodon/rust:lint",
+      "outputs": [
+        "{options.target-dir}"
+      ],
+      "options": {
+        "target-dir": "dist/target/models_book"
+      }
+    }
+  },
+  "tags": []
+}

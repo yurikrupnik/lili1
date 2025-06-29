@@ -1,0 +1,10 @@
+apiVersion: kro.run/v1alpha1
+kind: Application
+metadata:
+  name: my-application-instance1
+spec:
+  name: zerg-api1
+  image: yurikrupnik/zerg-api:sha-a327a2e
+  tag:
+  ingress:
+    enabled: true

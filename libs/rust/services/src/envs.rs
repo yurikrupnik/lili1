@@ -1,17 +1,21 @@
 // use crate::b64::b64u_decode;
 use std::env;
+// use std::fmt::Result;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
-use std::sync::LazyLock;
-
-// Example of caching DATABASE_URL with LazyLock
-static DATABASE_URL: LazyLock<Result<String>> =
-    LazyLock::new(|| env::var("DATABASE_URL").map_err(|_| Error::MissingEnv("DATABASE_URL")));
 
 #[derive(Debug)]
 pub struct Env {}
 
 impl Env {
+    pub fn is_prod() -> Result<bool> {
+        let value = Env::get_env("RUST_ENV")
+            .unwrap_or_else(|_| "development".to_string())
+            .eq_ignore_ascii_case("production");
+        Ok(value)
+        // let rust_env = env::var("RUST_ENV").unwrap_or_else(|_| "development".to_string());
+        // let is_production = rust_env.eq_ignore_ascii_case("production");
+    }
     pub fn get_env(name: &'static str) -> Result<String> {
         env::var(name).map_err(|_| Error::MissingEnv(name))
     }
@@ -22,22 +26,18 @@ impl Env {
     pub fn get_port() -> Result<u16> {
         Env::get_env_parse("PORT")
     }
-    // pub fn get_postgres() -> Result<String> {
-    //     Env::get_env("DATABASE_URL")
-    // }
-
     pub fn get_postgres() -> Result<String> {
-        DATABASE_URL.clone()
+        Env::get_env("DATABASE_URL")
     }
+
     pub fn get_redis() -> Result<String> {
         Env::get_env("REDIS_HOST")
     }
     pub fn get_mongo() -> Result<String> {
         Env::get_env("MONGO_URI")
     }
-    pub fn get_url() -> String {
-        let port = Env::get_port().unwrap();
-        format!("{}:{}", Ipv4Addr::UNSPECIFIED, port)
+    pub fn get_url() -> Result<String> {
+        Ok(format!("{}:{}", Ipv4Addr::UNSPECIFIED, Env::get_port()?))
     }
 }
 
@@ -57,7 +57,7 @@ pub fn get_env_parse<T: FromStr>(name: &'static str) -> Result<T> {
 // region:    --- Error
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub enum Error {
     MissingEnv(&'static str),
     WrongFormat(&'static str),
