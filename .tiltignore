@@ -1,0 +1,48 @@
+# Tilt ignore file - similar to .gitignore but for Tilt
+# Files and directories that Tilt should ignore when watching for changes
+
+# Rust build artifacts
+target/
+**/target/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files (these may contain secrets)
+.env.local
+.env.production
+
+# Temporary files
+tmp/
+temp/
+
+# Docker build context files
+.dockerignore
+
+# Git
+.git/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Test artifacts
+coverage/
+
+# Node modules (if any)
+node_modules/
+
+# Python cache (if any)
+__pycache__/
+*.pyc

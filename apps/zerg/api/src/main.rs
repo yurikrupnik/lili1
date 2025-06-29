@@ -30,17 +30,17 @@ async fn handler() -> Html<&'static str> {
 }
 
 async fn get_tasks() -> Json<Vec<Task>> {
-    use uuid::Uuid;
+    // use uuid::Uuid;
 
     let sample_tasks = vec![
         Task {
-            id: Uuid::new_v4(),
+            id: String::from("a"),
             title: "Setup local services".to_string(),
             description: Some("Integrate local services into the API app".to_string()),
             completed: true,
         },
         Task {
-            id: Uuid::new_v4(),
+          id: String::from("b"),
             title: "Add task routes".to_string(),
             description: Some("Create REST API endpoints for tasks".to_string()),
             completed: false,

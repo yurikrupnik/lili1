@@ -5,7 +5,7 @@ use clap::Parser;
 // use redis_derive::{FromRedisValue, ToRedisArgs};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
-use sqlx::types::Uuid;
+// use sqlx::types::Uuid;
 use sqlx::{FromRow, Row};
 // use tabled::Tabled;
 use utoipa::ToSchema;
@@ -24,7 +24,7 @@ use validator::Validate;
 // )]
 pub struct Task {
     #[schema(default = "00000000-0000-0000-0000-000000000000")]
-    pub id: Uuid,
+    pub id: String, // Uuid
     /// Title of the task
     pub title: String,
     // #[tabled(display_with = "format_option")]
