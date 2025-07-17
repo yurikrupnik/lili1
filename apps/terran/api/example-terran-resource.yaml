@@ -1,0 +1,76 @@
+apiVersion: terran.io/v1
+kind: TerranResource
+metadata:
+  name: example-app
+  namespace: default
+spec:
+  kcl_config:
+    source:
+      type: inline
+      script: |
+        # KCL script to generate Kubernetes resources
+        import k8s.api.core.v1 as corev1
+        import k8s.api.apps.v1 as appsv1
+        
+        # Generate ConfigMap
+        configmap: corev1.ConfigMap {
+            metadata: {
+                name: "example-app-config"
+                namespace: "default"
+            }
+            data: {
+                "app.yaml": """
+                  app:
+                    name: example-app
+                    version: 1.0.0
+                    replicas: 3
+                """
+            }
+        }
+        
+        # Generate Deployment
+        deployment: appsv1.Deployment {
+            metadata: {
+                name: "example-app-deployment"
+                namespace: "default"
+            }
+            spec: {
+                replicas: 3
+                selector: {
+                    matchLabels: {
+                        app: "example-app"
+                    }
+                }
+                template: {
+                    metadata: {
+                        labels: {
+                            app: "example-app"
+                        }
+                    }
+                    spec: {
+                        containers: [{
+                            name: "app"
+                            image: "nginx:1.21"
+                            ports: [{
+                                containerPort: 80
+                            }]
+                        }]
+                    }
+                }
+            }
+        }
+        
+        # Output both resources
+        [configmap, deployment]
+    entry_point: "main"
+  target_namespace: "default"
+  parameters:
+    app_name: "example-app"
+    replicas: "3"
+  event_config:
+    topic: "terran-events"
+    event_types:
+      - "ReconciliationStarted"
+      - "ReconciliationCompleted"
+      - "ReconciliationFailed"
+    consumer_group: "terran-operator"
