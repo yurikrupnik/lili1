@@ -1,0 +1,8 @@
+kcl_options:
+  - key: config
+    value:
+      area: frankfurt
+      primary_cloud: aws
+      gitops: argo
+      local: true
+      monitoring: false

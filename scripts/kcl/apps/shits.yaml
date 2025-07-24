@@ -1,0 +1,256 @@
+config:
+  local: true
+  primary_cloud: aws
+  secondary_cloud: aws
+  gitops: argo
+  area: tel-aviv
+  region: il-central-1
+  monitoring: true
+applications:
+- name: crossplane
+  enabled: true
+  repo_url: https://github.com/crossplane/crossplane
+  path: cluster/charts/crossplane
+  namespace: crossplane-system
+  chart: crossplane
+  helm_repo: https://charts.crossplane.io/stable
+  target_revision: HEAD
+  auto_sync: true
+  prune: true
+  self_heal: true
+- name: external-secrets
+  enabled: true
+  repo_url: https://github.com/external-secrets/external-secrets
+  path: deploy/charts/external-secrets
+  namespace: external-secrets-system
+  chart: external-secrets
+  helm_repo: https://charts.external-secrets.io
+  target_revision: HEAD
+  auto_sync: true
+  prune: true
+  self_heal: true
+- name: prometheus
+  enabled: true
+  repo_url: https://github.com/prometheus-community/helm-charts
+  path: charts/kube-prometheus-stack
+  namespace: monitoring
+  chart: kube-prometheus-stack
+  helm_repo: https://prometheus-community.github.io/helm-charts
+  target_revision: HEAD
+  auto_sync: true
+  prune: true
+  self_heal: true
+- name: cert-manager
+  enabled: false
+  repo_url: https://github.com/cert-manager/cert-manager
+  path: deploy/charts/cert-manager
+  namespace: cert-manager
+  chart: cert-manager
+  helm_repo: https://charts.jetstack.io
+  target_revision: HEAD
+  auto_sync: true
+  prune: true
+  self_heal: true
+- name: istio-base
+  enabled: false
+  repo_url: https://github.com/istio/istio
+  path: manifests/charts/base
+  namespace: istio-system
+  chart: base
+  helm_repo: https://istio-release.storage.googleapis.com/charts
+  target_revision: HEAD
+  auto_sync: true
+  prune: true
+  self_heal: true
+- name: vault
+  enabled: false
+  repo_url: https://github.com/hashicorp/vault-helm
+  path: '.'
+  namespace: vault
+  chart: vault
+  helm_repo: https://helm.releases.hashicorp.com
+  target_revision: HEAD
+  auto_sync: true
+  prune: true
+  self_heal: true
+gitops_resources:
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    labels:
+      app.kubernetes.io/name: crossplane
+    name: crossplane-tel-aviv
+    namespace: argocd
+  spec:
+    destination:
+      namespace: crossplane-system
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      chart: crossplane
+      repoURL: https://charts.crossplane.io/stable
+      targetRevision: HEAD
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    labels:
+      app.kubernetes.io/name: external-secrets
+    name: external-secrets-tel-aviv
+    namespace: argocd
+  spec:
+    destination:
+      namespace: external-secrets-system
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      chart: external-secrets
+      repoURL: https://charts.external-secrets.io
+      targetRevision: HEAD
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    labels:
+      app.kubernetes.io/name: prometheus
+    name: prometheus-tel-aviv
+    namespace: argocd
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      chart: kube-prometheus-stack
+      repoURL: https://prometheus-community.github.io/helm-charts
+      targetRevision: HEAD
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+flux_resources:
+- apiVersion: source.toolkit.fluxcd.io/v1
+  kind: GitRepository
+  metadata:
+    name: podinfo
+    namespace: default
+  spec:
+    interval: '5m0s'
+    ref:
+      branch: master
+    timeout: '60s'
+    url: https://github.com/stefanprodan/podinfo
+argocd_apps:
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    labels:
+      app.kubernetes.io/name: podinfo
+      environment: tel-aviv
+      cloud: aws
+      gitops: argo
+    name: podinfo-tel-aviv
+    namespace: argocd
+  spec:
+    destination:
+      namespace: podinfo
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      path: kustomize
+      repoURL: https://github.com/stefanprodan/podinfo
+      targetRevision: HEAD
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    labels:
+      app.kubernetes.io/name: monitoring
+      environment: tel-aviv
+      cloud: aws
+      gitops: argo
+    name: monitoring-stack-tel-aviv
+    namespace: argocd
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      path: charts/kube-prometheus-stack
+      repoURL: https://github.com/prometheus-community/helm-charts
+      targetRevision: HEAD
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+filtered_argocd_apps:
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    labels:
+      app.kubernetes.io/name: podinfo
+      environment: tel-aviv
+      cloud: aws
+      gitops: argo
+    name: podinfo-tel-aviv
+    namespace: argocd
+  spec:
+    destination:
+      namespace: podinfo
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      path: kustomize
+      repoURL: https://github.com/stefanprodan/podinfo
+      targetRevision: HEAD
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    labels:
+      app.kubernetes.io/name: monitoring
+      environment: tel-aviv
+      cloud: aws
+      gitops: argo
+    name: monitoring-stack-tel-aviv
+    namespace: argocd
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      path: charts/kube-prometheus-stack
+      repoURL: https://github.com/prometheus-community/helm-charts
+      targetRevision: HEAD
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true

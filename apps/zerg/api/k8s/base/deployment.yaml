@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zerg-api
+  labels:
+    app: zerg-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zerg-api
+  template:
+    metadata:
+      name: zerg-api
+      labels:
+        app: zerg-api
+    spec:
+      containers:
+        - name: zerg-api
+#          image: yurikrupnik/zerg-api:sha-f1223bb
+#          image: yurikrupnik/zerg-api:sha-caec71c
+          image: zerg-api
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: MONGO_URI
+              value: "mongodb://localhost:27017"
+            - name: PORT
+              value: "8080"
+      restartPolicy: Always
+

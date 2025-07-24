@@ -55,7 +55,7 @@ spec:
         apiVersion: v1
         kind: Service
         metadata:
-          name: ${schema.spec.name}-service
+          name: ${schema.spec.name}
         spec:
           selector: ${deployment.spec.selector.matchLabels} # Use the deployment selector
           ports:

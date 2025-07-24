@@ -1,0 +1,52 @@
+kcl_options:
+  - key: config
+    value:
+      area: tel-aviv
+      primary_cloud: aws
+      gitops: flux
+      local: true
+  - key: applications
+    value:
+      - name: crossplane
+        enabled: true
+        repo_url: "https://github.com/crossplane/crossplane"
+        path: "cluster/charts/crossplane"
+        namespace: "crossplane-system"
+        chart: "crossplane"
+        helm_repo: "https://charts.crossplane.io/stable"
+        target_revision: 1.20.x
+      - name: dapr
+        enabled: false
+        repo_url: "https://github.com/dapr/dapr"
+        namespace: "dapr-system"
+        chart: "dapr"
+        helm_repo: "https://dapr.github.io/helm-charts/"
+        target_revision: 1.15.x
+#      - name: external-secrets
+#        enabled: true
+#        repo_url: "https://github.com/external-secrets/external-secrets"
+#        path: "deploy/charts/external-secrets"
+#        namespace: "external-secrets"
+#        chart: "external-secrets"
+#        helm_repo: "https://charts.external-secrets.io"
+#      - name: prometheus
+#        enabled: true
+#        repo_url: "https://github.com/prometheus-community/helm-charts"
+#        path: "charts/kube-prometheus-stack"
+#        namespace: "monitoring"
+#        chart: "kube-prometheus-stack"
+#        helm_repo: "https://prometheus-community.github.io/helm-charts"
+#      - name: cert-manager
+#        enabled: false
+#        repo_url: "https://github.com/cert-manager/cert-manager"
+#        path: "deploy/charts/cert-manager"
+#        namespace: "cert-manager"
+#        chart: "cert-manager"
+#        helm_repo: "https://charts.jetstack.io"
+#      - name: istio-base
+#        enabled: false
+#        repo_url: "https://github.com/istio/istio"
+#        path: "manifests/charts/base"
+#        namespace: "istio-system"
+#        chart: "base"
+#        helm_repo: "https://istio-release.storage.googleapis.com/charts"

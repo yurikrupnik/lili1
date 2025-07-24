@@ -1,34 +1,79 @@
-use crate::envs::Env;
 use std::env;
-use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 pub fn init_tracing() {
-    // Determine the environment: "production" or "development"
-    // let is_production = Env::is_prod().unwrap();
     let rust_env = env::var("RUST_ENV").unwrap_or_else(|_| "development".to_string());
     let is_production = rust_env.eq_ignore_ascii_case("production");
-    // let rust_env = env::var("RUST_ENV").unwrap_or_else(|_| "development".to_string());
-    // let is_production = rust_env.eq_ignore_ascii_case("production");
-    // Configure the EnvFilter:
-    // - Try to create it from RUST_LOG
-    // - If RUST_LOG is not set or invalid, default to "info"
+    
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    // Initialize the tracing subscriber based on the environment
+    
     if is_production {
-        tracing_subscriber::fmt()
-            .json() // JSON format for production logs
+        let _ = tracing_subscriber::fmt()
+            .json()
             .with_env_filter(filter)
             .with_target(false)
-            .init();
+            .try_init();
     } else {
-        tracing_subscriber::fmt()
+        let _ = tracing_subscriber::fmt()
             .with_env_filter(filter)
             .with_target(false)
-            .pretty() // Pretty-printed logs for development
-            .init();
+            .pretty()
+            .try_init();
     }
+}
 
-    // Test log to verify that logging is set up correctly
-    // info!("Logging initialized. Environment: {}", rust_env);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+    use std::sync::Once;
+    
+    static INIT: Once = Once::new();
+    
+    fn setup_test() {
+        INIT.call_once(|| {
+            env::remove_var("RUST_LOG");
+            env::remove_var("RUST_ENV");
+        });
+    }
+    
+    #[test]
+    fn test_init_tracing_development() {
+        setup_test();
+        env::set_var("RUST_ENV", "development");
+        
+        init_tracing();
+        
+        env::remove_var("RUST_ENV");
+    }
+    
+    #[test]
+    fn test_init_tracing_production() {
+        setup_test();
+        env::set_var("RUST_ENV", "production");
+        
+        init_tracing();
+        
+        env::remove_var("RUST_ENV");
+    }
+    
+    #[test]
+    fn test_init_tracing_default_env() {
+        setup_test();
+        env::remove_var("RUST_ENV");
+        
+        init_tracing();
+    }
+    
+    #[test]
+    fn test_init_tracing_with_rust_log() {
+        setup_test();
+        env::set_var("RUST_LOG", "debug");
+        env::set_var("RUST_ENV", "development");
+        
+        init_tracing();
+        
+        env::remove_var("RUST_LOG");
+        env::remove_var("RUST_ENV");
+    }
 }

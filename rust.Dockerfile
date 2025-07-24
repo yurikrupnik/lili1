@@ -4,6 +4,7 @@ RUN cargo install cargo-chef --locked
 
 FROM chef AS planner
 ARG APP_NAME
+#WORKDIR /app
 COPY ./Cargo.toml ./Cargo.lock ./
 COPY ./apps ./apps/
 COPY ./libs ./libs/
@@ -21,13 +22,11 @@ RUN cargo chef cook --release --recipe-path recipe.json --target x86_64-unknown-
 # Copy source code and build application
 COPY . .
 RUN cargo build --release -p $APP_NAME --target x86_64-unknown-linux-musl
-
 # Ultra-minimal runtime stage
 FROM scratch AS rust
 ARG APP_NAME
-
 # Copy CA certificates for HTTPS requests (if needed)
-#COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Copy the statically linked binary
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/$APP_NAME /app

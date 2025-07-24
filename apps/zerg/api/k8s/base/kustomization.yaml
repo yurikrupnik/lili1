@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+##
+#metadata:
+#  name: zerg-api-base
+#  namespace: default
+
+resources:
+  - deployment.yaml
+  - service.yaml
+#  - configmap.yaml
+#  - secret.yaml
+
+#commonLabels:
+#  app: zerg-api
+#  version: v1
+#
+#images:
+#  - name: zerg-api
+#    newTag: latest
+#
+#namePrefix: zerg-api-
+#
+#replicas:
+#  - name: zerg-api
+#    count: 2

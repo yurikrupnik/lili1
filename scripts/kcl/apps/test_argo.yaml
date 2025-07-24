@@ -1,0 +1,21 @@
+kcl_options:
+  - key: config
+    value:
+      area: tel-aviv
+      primary_cloud: aws
+      gitops: argo
+      local: true
+  - key: applications
+    value:
+      - name: crossplane
+        enabled: true
+        repo_url: "https://github.com/crossplane/crossplane"
+        path: "cluster/charts/crossplane"
+        namespace: "crossplane-system"
+        chart: "crossplane"
+        helm_repo: "https://charts.crossplane.io/stable"
+      - name: test-app
+        enabled: true
+        repo_url: "https://github.com/example/test-app"
+        path: "manifests"
+        namespace: "test"
