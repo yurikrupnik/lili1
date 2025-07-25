@@ -2,7 +2,6 @@ use config.nu
 
 def "main create" [
     # --providers = [aws azure google kind upcloud]
-    --gitops: string = "flux"
     --ingress = true
 ] {
     let cluster_name = (config cluster_name)
@@ -21,17 +20,35 @@ def "main create" [
 
     [
         { nu scripts/nu/ingress.nu }
-        { config main apply kyverno }
         { config main delete temp_files }
+        #{ config main apply kyverno }
     ] | par-each { |task| do $task }
 
-    if $gitops == "flux" { # error  failed to commit component manifests: cannot create empty commit: clean working tree
-                                   # error: Recipe `cluster-create` failed on line 2 with exit code 1
-      let token = (gcloud secrets versions access latest --secret="github-secret" --project="705877191303")
-      $env.GITHUB_TOKEN = $token
-      flux bootstrap github --token-auth --owner=yurikrupnik --repository=gitops-v2 --branch=main --path=clusters/first-cluster --personal --components-extra image-reflector-controller,image-automation-controller
-      # flux bootstrap github --token-auth --owner=yurikrupnik --repository=gitops-v2 --branch=main --path=clusters/local-cluster --personal --components-extra=image-reflector-controller,image-automation-controller --force
-      #flux bootstrap github --token-auth --owner=yurikrupnik --repository=gitops --branch=main --path=clusters/local-cluster --personal --components-extra=image-reflector-controller,image-automation-controller --force
+    # Read gitops configuration from kcl.yaml
+    let kcl_config = (open scripts/kcl/apps/kcl.yaml)
+    let config_value = ($kcl_config.kcl_options | where key == "config" | get value.0)
+    let gitops = ($config_value.gitops | default "flux")
+
+    print $"🔧 Using gitops type from kcl.yaml: (ansi cyan)($gitops)(ansi reset)"
+
+    if $gitops == "flux" {
+        let token = (gh auth token)
+        $env.GITHUB_TOKEN = $token
+
+        # Bootstrap Flux
+        flux bootstrap github --token-auth --owner=yurikrupnik --repository=gitops-v2 --branch=main --path=clusters/second-cluster --personal --components-extra image-reflector-controller,image-automation-controller
+
+        # Generate Flux resources from KCL config
+        let items = (kcl scripts/kcl/apps/resources_only.k -Y scripts/kcl/apps/kcl.yaml | from yaml)
+        let flux_content = ($items.items | each { |item| $item | to yaml } | str join "\n---\n")
+        $flux_content | save flux.yaml -f
+        print "Flux resources saved to flux.yaml"
+
+        # Push to gitops repository
+        main gitops-push --files ["flux.yaml:flux/flux.yaml"] --commit-msg "feat: update flux configuration"
+
+        # Apply from gitops repository
+        main gitops-apply --files ["flux/flux.yaml"]
 
     } else if $gitops == "argo" {
         kubectl create namespace argocd
@@ -62,32 +79,14 @@ spec:
       kind: '*'"
         let yaml_content = ($items.items | each { |item| $item | to yaml } | str join "\n---\n")
         $"($app_project)\n---\n($yaml_content)" | save argocd.yaml -f
-        print "Items saved to argocd.yaml"
-        main push-to-gitops
-        main apply-via-gitops
+        print "ArgoCD resources saved to argocd.yaml"
 
+        # Push to gitops repository
+        main gitops-push --files ["argocd.yaml:argocd/argocd.yaml"] --commit-msg "feat: update argocd configuration"
+
+        # Apply from gitops repository
+        main gitops-apply --files ["argocd/argocd.yaml"]
     }
-
-
-    #helm repo add cnpg https://cloudnative-pg.github.io/charts
-    #(
-     # helm upgrade --install cnpg
-      #  --namespace cnpg-system
-      #  --create-namespace
-      #  cnpg/cloudnative-pg
-    #)
-    #helm repo add grafana https://grafana.github.io/helm-charts
-    #helm install my-loki grafana/loki --version 6.32.0
-    #if $observability {
-     #   install_observability_stack $gitops
-    #}
-
-    #if $secrets {
-     #   install_external_secrets $gitops
-    #}
-
-    #print_cluster_info $cluster_name $observability $secrets $gitops
-
 }
 
 def "main delete" [] {
@@ -96,85 +95,10 @@ def "main delete" [] {
     kind delete cluster --name $cluster_name
 }
 
-# def "main gitops" [
-#     --config-file?: string
-#     --name?: string
-#     --repo?: string
-#     --path: string = "."
-#     --namespace: string = "default"
-#     --chart?: string
-#     --helm-repo?: string
-#     --gitops-type?: string
-#     --cloud?: string
-#     --area?: string
-#     --revision: string = "HEAD"
-#     --local: bool = False
-#     --monitoring: bool = false
-#     --observability: bool = false
-#     --auto-sync: bool = true
-#     --prune: bool = true
-#     --self-heal: bool = true
-#     --dry-run: bool = false
-# ] {
-#     let base_config = if ($config_file | is-empty) {
-#         {
-#             local: $local
-#             primary_cloud: ($cloud | default "gcp")
-#             gitops: ($gitops_type | default "flux")
-#             area: ($area | default "tel-aviv")
-#             monitoring: $monitoring
-#             observability: $observability
-#         }
-#     } else {
-#         open $config_file | get config? | default {}
-#     }
-
-#     let apps = if ($config_file | is-empty) {
-#         if ($name | is-empty) or ($repo | is-empty) {
-#             error make { msg: "Either provide --config-file or both --name and --repo" }
-#         }
-#         [{
-#             name: $name
-#             enabled: true
-#             repo_url: $repo
-#             path: $path
-#             namespace: $namespace
-#             chart: $chart
-#             helm_repo: $helm_repo
-#             target_revision: $revision
-#             auto_sync: $auto_sync
-#             prune: $prune
-#             self_heal: $self_heal
-#         }]
-#     } else {
-#         open $config_file | get applications? | default []
-#     }
-
-#     let final_config = {
-#         config: $base_config
-#         applications: $apps
-#     }
-
-#     let kcl_config = $"scripts/kcl/apps/generated_config_($env.USER).yaml"
-#     $final_config | to yaml | save $kcl_config -f
-
-#     print $"📝 Generated KCL config at ($kcl_config)"
-#     print $"🚀 Creating gitops resources for ($base_config.gitops)..."
-
-#     if $dry_run {
-#         print "🔍 Dry run - showing generated resources:"
-#         kcl run scripts/kcl/apps/main.k -Y $kcl_config
-#     } else {
-#         kcl run scripts/kcl/apps/main.k -Y $kcl_config | kubectl apply -f -
-#         print $"✅ Successfully deployed using ($base_config.gitops)"
-#     }
-
-#     if not $dry_run {
-#         rm $kcl_config
-#     }
-# }
-
-def "main push-to-gitops" [] {
+def "main gitops-push" [
+    --files: list<string>  # List of files to push: ["argocd.yaml:argocd/", "flux.yaml:flux/"]
+    --commit-msg: string = "feat: update gitops configuration files"
+] {
     let gitops_repo = "https://github.com/yurikrupnik/gitops-v2"
     let temp_dir = $"/tmp/gitops-v2-($env.USER)"
 
@@ -184,48 +108,73 @@ def "main push-to-gitops" [] {
         rm -rf $temp_dir
     }
 
-    let token = (gcloud secrets versions access latest --secret="github-secret" --project="705877191303")
+    let token = (gh auth token)
     let auth_url = $"https://($token)@github.com/yurikrupnik/gitops-v2.git"
 
     git clone $auth_url $temp_dir
 
-    print "📁 Creating argocd folder and copying argocd.yaml to gitops repository..."
-    mkdir $"($temp_dir)/argocd"
-    cp argocd.yaml $"($temp_dir)/argocd/argocd.yaml"
+    # Store current directory before changing
+    let current_dir = (pwd)
 
     cd $temp_dir
 
-    git add argocd/argocd.yaml
+    # Process each file
+    for file_mapping in $files {
+        let parts = ($file_mapping | split row ":")
+        let source_file = ($parts | get 0)
+        let target_path = ($parts | get 1)
+
+        print $"📁 Creating ($target_path) folder and copying ($source_file)..."
+
+        # Create target directory if it doesn't exist
+        let target_dir = ($target_path | path dirname)
+        if $target_dir != "." and not ($target_dir | path exists) {
+            mkdir $target_dir
+        }
+
+        # Copy file using absolute path
+        let source_path = ($current_dir | path join $source_file)
+        cp $source_path $target_path
+        git add $target_path
+    }
 
     let git_status = (git status --porcelain)
 
     if ($git_status | is-empty) {
-        print "📝 No changes detected, argocd.yaml is already up to date"
+        print "📝 No changes detected, files are already up to date"
     } else {
-        let commit_msg = "feat: update argocd.yaml configuration file
+        git commit -m $"($commit_msg)
 
-🤖 Generated with [Claude Code](https://claude.ai/code)
+🤖 Generated with [Claude Code]\(https://claude.ai/code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 
-        git commit -m $commit_msg
-
         print "🚀 Pushing to gitops-v2 repository..."
         git push origin main
-        print "✅ Successfully pushed argocd.yaml to gitops-v2 repository"
+        print "✅ Successfully pushed files to gitops-v2 repository"
     }
 
     cd -
     rm -rf $temp_dir
 }
 
-def "main apply-via-gitops" [] {
-    print "🔄 Applying ArgoCD configuration via gitops repository..."
+def "main gitops-apply" [
+    --files: list<string>  # List of files to apply: ["argocd/argocd.yaml", "flux/flux.yaml"]
+] {
+    print "🔄 Applying gitops configurations from repository..."
 
     let token = (gh auth token)
-    let argocd_url = $"https://($token)@raw.githubusercontent.com/yurikrupnik/gitops-v2/main/argocd/argocd.yaml"
 
-    kubectl apply -f $argocd_url
+    for file_path in $files {
+        let file_url = $"https://($token)@raw.githubusercontent.com/yurikrupnik/gitops-v2/main/($file_path)"
+        print $"📦 Applying ($file_path)..."
 
-    print "✅ Successfully applied ArgoCD configuration from gitops repository"
+        try {
+            kubectl apply -f $file_url
+        } catch { |err|
+            print $"❌ Failed to apply ($file_path): ($err.msg)"
+        }
+    }
+
+    print "✅ Finished applying gitops configurations from repository"
 }

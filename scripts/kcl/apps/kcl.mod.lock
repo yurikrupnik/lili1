@@ -23,6 +23,14 @@
     reg = "ghcr.io"
     repo = "kcl-lang/fluxcd"
     oci_tag = "0.1.2"
+  [dependencies.fluxcd-kustomize-controller]
+    name = "fluxcd-kustomize-controller"
+    full_name = "fluxcd-kustomize-controller_v1.3.2"
+    version = "v1.3.2"
+    sum = "MZgVf8xwTAubdHdcr3s9K87jNRE4xDv0Yc2s08obs/o="
+    reg = "ghcr.io"
+    repo = "kcl-lang/fluxcd-kustomize-controller"
+    oci_tag = "v1.3.2"
   [dependencies.fluxcd-source-controller]
     name = "fluxcd-source-controller"
     full_name = "fluxcd-source-controller_v1.3.2"

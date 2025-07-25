@@ -22,7 +22,6 @@ export def "main apply kyverno" [] {
             --namespace kyverno --create-namespace
             --wait
     )
-    vela install
 }
 
 def --env "main get github" [--enable-org = true] {

@@ -6,7 +6,7 @@ import argo_cd.v1alpha1 as argoV1
 schema App:
     name: str
     enabled: bool = True
-    repo_url: str
+    repo_url?: str
     path: str = "."
     namespace: str
     chart?: str
@@ -15,6 +15,8 @@ schema App:
     auto_sync: bool = True
     prune: bool = True
     self_heal: bool = True
+    sync_wave: int = 0
+    depends_on: [str] = []
 
 
 _create_flux_git_repository = lambda app: App -> fluxV1.GitRepository {
@@ -59,6 +61,7 @@ _create_flux_helm_release = lambda app: App -> any {
         }
         spec = {
             interval = "5m0s"
+            dependsOn = [{"name" = dep} for dep in app.depends_on] if app.depends_on else None
             chart = {
                 spec = {
                     chart = app.chart
@@ -84,6 +87,7 @@ _create_flux_kustomization = lambda app: App -> any {
         }
         spec = {
             interval = "5m0s"
+            dependsOn = [{"name" = dep} for dep in app.depends_on] if app.depends_on else None
             path = app.path
             prune = app.prune
             sourceRef = {
@@ -95,7 +99,7 @@ _create_flux_kustomization = lambda app: App -> any {
     }
 }
 
-_create_argocd_application = lambda config, app: App -> argoV1.Application {
+_create_argocd_application = lambda app: App -> argoV1.Application {
     argoV1.Application {
         metadata = {
             name = app.name
@@ -103,6 +107,9 @@ _create_argocd_application = lambda config, app: App -> argoV1.Application {
             labels = {
                 "app.kubernetes.io/name" = app.name
                 "generated-by": "gitops.k"
+            }
+            annotations = {
+                "argocd.argoproj.io/sync-wave" = str(app.sync_wave)
             }
         }
         spec = {
@@ -148,26 +155,59 @@ _create_flux_resources = lambda apps: [App] -> [any] {
     source_resources + workload_resources
 }
 
-get_gitops_resources = lambda gitops_type: str, config, apps: [App] -> [any] {
-    _create_flux_resources(apps) if gitops_type == "flux" else [
-        _create_argocd_application(config, app) for app in apps
+_create_namespace = lambda name: str -> any {
+    {
+        apiVersion = "v1"
+        kind = "Namespace"
+        metadata = {
+            name = name
+        }
+    }
+}
+
+get_gitops_resources = lambda gitops_type: str, apps: [App] -> [any] {
+    # Extract unique namespaces from apps
+    namespaces = [app.namespace for app in apps if app.namespace]
+    unique_namespaces = list({ns: True for ns in namespaces})
+
+    # Create namespace resources
+    namespace_resources = [_create_namespace(ns) for ns in unique_namespaces]
+
+    # Check if cert-manager is in the apps list
+    has_cert_manager = len([app for app in apps if app.name == "cert-manager"]) > 0
+
+    # Create cert-manager CRDs Job if needed
+    cert_manager_crds = [{
+        apiVersion = "batch/v1"
+        kind = "Job"
+        metadata = {
+            name = "cert-manager-crds-installer"
+            namespace = "kube-system"
+        }
+        spec = {
+            template = {
+                spec = {
+                    serviceAccountName = "cert-manager-crds-installer"
+                    restartPolicy = "OnFailure"
+                    containers = [{
+                        name = "kubectl"
+                        image = "bitnami/kubectl:latest"
+                        command = ["kubectl", "apply", "-f", "https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.crds.yaml"]
+                    }]
+                }
+            }
+        }
+    }] if has_cert_manager else []
+
+    base_resources = _create_flux_resources(apps) if gitops_type == "flux" else [
+        _create_argocd_application(app) for app in apps
     ] if gitops_type == "argo" else []
+
+    namespace_resources + cert_manager_crds + base_resources
 }
 
 # Instantiate resources when run directly
-config = option("config") or {
-    local: True
-    primary_cloud: "gcp"
-    secondary_cloud: "aws"
-    gitops: "flux"
-    area: "tel-aviv"
-}
-
-_applications: [App] = option("applications") or []
-_enabled_applications = [app for app in _applications if app.enabled]
-_resources = get_gitops_resources(config.gitops, config, _enabled_applications)
 
 # Output just resources when resources_only option is true
 _resources_only = option("resources_only") or True
-items = _resources if _resources_only else Undefined
 
