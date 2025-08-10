@@ -16,7 +16,7 @@ prod_config = main.Config {
     local = False
     primary_cloud = "gcp"
     area = "tel-aviv"
-    gitops = "argo"
+    gitops = "flux"
     monitoring = True
 }
 

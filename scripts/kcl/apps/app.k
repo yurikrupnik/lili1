@@ -25,7 +25,7 @@ create_app = lambda app: AppConfig {
             labels = app.labels
         }
         spec = {
-            replicas = 1
+            #replicas = 1
             selector = {
                 matchLabels = {
                     app = app.name
@@ -46,10 +46,22 @@ create_app = lambda app: AppConfig {
                             name: app.name
                             image: app.image
                             imagePullPolicy: "IfNotPresent"
+                            resources = {
+                              requests = {
+                                memory: "32Mi"
+                                cpu: "150m"
+                              }
+                              limits = {
+                                 memory: "64Mi"
+                                 cpu: "100m"
+                              }
+                            }
+
                             ports = [
                                 {
                                     containerPort = app.port
                                     protocol = "TCP"
+                                    name = "http"
                                 }
                             ]
                             env = [core.EnvVar {

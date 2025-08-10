@@ -6,7 +6,7 @@ use std::sync::LazyLock;
 
 // Example of caching DATABASE_URL with LazyLock
 static DATABASE_URL: LazyLock<Result<String>> =
-    LazyLock::new(|| env::var("DATABASE_URL").map_err(|_| Error::MissingEnv("DATABASE_URL")));
+    LazyLock::new(|| Env::get_env("DATABASE_URL"));
 
 #[derive(Debug)]
 pub struct Env {}

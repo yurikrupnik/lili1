@@ -1,18 +1,25 @@
 mod shared;
+mod metrics;
+mod error;
 
-use axum::{response::Html, routing::get, Json, Router};
+use axum::{response::Html, routing::get, Json, Router, middleware};
 use eyre::Result;
 use rust_services::{envs::Env, model::task::Task, tracing::init_tracing};
+use tower_http::trace::TraceLayer;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     init_tracing();
+    metrics::setup_metrics()?;
     tracing::info!("Starting API server");
 
     let app_router = Router::new()
         .route("/", get(handler))
-        .route("/tasks", get(get_tasks));
+        .route("/tasks", get(get_tasks))
+        .route("/metrics", get(metrics::metrics_handler))
+        .layer(middleware::from_fn(metrics::metrics_middleware))
+        .layer(TraceLayer::new_for_http());
     let url = Env::get_url().map_err(|e| eyre::eyre!("Failed to get URL: {}", e))?;
     let listener = tokio::net::TcpListener::bind(&url).await?;
 

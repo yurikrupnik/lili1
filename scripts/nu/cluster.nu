@@ -2,7 +2,7 @@ use config.nu
 
 def "main create" [
     # --providers = [aws azure google kind upcloud]
-    --ingress = true
+    --ingress = false
 ] {
     let cluster_name = (config cluster_name)
 
@@ -38,17 +38,28 @@ def "main create" [
         # Bootstrap Flux
         flux bootstrap github --token-auth --owner=yurikrupnik --repository=gitops-v2 --branch=main --path=clusters/second-cluster --personal --components-extra image-reflector-controller,image-automation-controller
 
-        # Generate Flux resources from KCL config
-        let items = (kcl scripts/kcl/apps/resources_only.k -Y scripts/kcl/apps/kcl.yaml | from yaml)
-        let flux_content = ($items.items | each { |item| $item | to yaml } | str join "\n---\n")
-        $flux_content | save flux.yaml -f
-        print "Flux resources saved to flux.yaml"
+        # Generate Flux folder structure
+        nu scripts/nu/generate_flux_folders.nu
+
+        # Prepare files for gitops push - get all folders in clusters/second-cluster
+        let app_folders = (ls clusters/second-cluster | where type == dir | get name)
+        let files_to_push = ($app_folders | each { |folder|
+            let folder_name = ($folder | path basename)
+            $"($folder):clusters/second-cluster/($folder_name)/"
+        })
+
+        print $"📦 Pushing ($files_to_push | length) app folders to gitops repository..."
 
         # Push to gitops repository
-        main gitops-push --files ["flux.yaml:flux/flux.yaml"] --commit-msg "feat: update flux configuration"
+        main gitops-push --files $files_to_push --commit-msg "feat: update flux configuration with folder structure"
 
-        # Apply from gitops repository
-        main gitops-apply --files ["flux/flux.yaml"]
+        # Apply from gitops repository - apply each app's kustomization
+        let apply_files = ($app_folders | each { |folder|
+            let folder_name = ($folder | path basename)
+            $"clusters/second-cluster/($folder_name)/kustomization.yaml"
+        })
+
+        #main gitops-apply --files $apply_files
 
     } else if $gitops == "argo" {
         kubectl create namespace argocd
@@ -96,7 +107,7 @@ def "main delete" [] {
 }
 
 def "main gitops-push" [
-    --files: list<string>  # List of files to push: ["argocd.yaml:argocd/", "flux.yaml:flux/"]
+    --files: list<string>  # List of files/dirs to push: ["argocd.yaml:argocd/", "clusters/second-cluster/app1:clusters/second-cluster/app1/"]
     --commit-msg: string = "feat: update gitops configuration files"
 ] {
     let gitops_repo = "https://github.com/yurikrupnik/gitops-v2"
@@ -118,24 +129,40 @@ def "main gitops-push" [
 
     cd $temp_dir
 
-    # Process each file
+    # Process each file or directory mapping
     for file_mapping in $files {
         let parts = ($file_mapping | split row ":")
-        let source_file = ($parts | get 0)
+        let source_path_str = ($parts | get 0)
         let target_path = ($parts | get 1)
 
-        print $"📁 Creating ($target_path) folder and copying ($source_file)..."
+        let source_path = ($current_dir | path join $source_path_str)
 
-        # Create target directory if it doesn't exist
-        let target_dir = ($target_path | path dirname)
-        if $target_dir != "." and not ($target_dir | path exists) {
-            mkdir $target_dir
+        if ($source_path | path exists) {
+            print $"📁 Processing ($source_path_str) -> ($target_path)..."
+
+            # Create target directory if it doesn't exist
+            let target_dir = ($target_path | path dirname)
+            if $target_dir != "." and not ($target_dir | path exists) {
+                mkdir $target_dir
+            }
+
+            # Check if source is a directory or file
+            if ($source_path | path type) == "dir" {
+                # For directories, ensure target parent exists and copy recursively
+                let target_parent = ($target_path | path dirname)
+                if not ($target_parent | path exists) {
+                    mkdir $target_parent
+                }
+                cp -r $source_path $target_parent
+            } else {
+                # Copy individual file
+                cp $source_path $target_path
+            }
+
+            git add $target_path
+        } else {
+            print $"⚠️  Warning: Source path ($source_path_str) does not exist, skipping..."
         }
-
-        # Copy file using absolute path
-        let source_path = ($current_dir | path join $source_file)
-        cp $source_path $target_path
-        git add $target_path
     }
 
     let git_status = (git status --porcelain)

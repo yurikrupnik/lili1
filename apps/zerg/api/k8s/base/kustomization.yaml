@@ -8,6 +8,8 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
+  - servicemonitor.yaml
+  - grafana-dashboard-configmap.yaml
 #  - configmap.yaml
 #  - secret.yaml
 
@@ -16,7 +18,7 @@ resources:
 #  version: v1
 #
 #images:
-#  - name: zerg-api
+#  - name: yurikrupnik/zerg-api
 #    newTag: latest
 #
 #namePrefix: zerg-api-

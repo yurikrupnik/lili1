@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: rust-app-vs
+  namespace: aris
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - node-api-rest-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /rust
+      route:
+        - destination:
+            host: rust-app-service
+            port:
+              number: 8080
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: node-api-rest-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"

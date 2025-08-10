@@ -3,14 +3,14 @@ pub mod model;
 pub mod tracing;
 // mod app;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, ValueEnum};
 use core::str;
 // use strum::{Display, EnumString, IntoEnumIterator, VariantNames};
 // use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames};
-use strum::{Display, EnumString, IntoEnumIterator, VariantNames};
-use strum_macros::{EnumIter, EnumVariantNames};
+use strum::{Display, EnumString};
+use strum_macros::{EnumIter, VariantNames};
 // Define enums with both Strum and Clap derives
-#[derive(Debug, Clone, Display, EnumString, EnumIter, EnumVariantNames, ValueEnum)]
+#[derive(Debug, Clone, Display, EnumString, EnumIter, VariantNames, ValueEnum)]
 #[strum(serialize_all = "lowercase")]
 #[clap(rename_all = "lowercase")]
 pub enum LogLevel {

@@ -1,0 +1,6 @@
+resources:
+  - ns.yaml
+  - mongodb.yaml
+  - postgres.yaml
+  - redis.yaml
+namespace: dbs

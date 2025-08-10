@@ -5,10 +5,16 @@ import external_secrets.v1 as es
 
 schema Dam:
     secrets: es
-    gitops: argoV1 | fluxV1
+    gitops: [argoV1 | fluxV1]
 
 
 
+cons = Dam {
+  gitops = [
+    fluxV1.GitRepository {
 
+    }
+  ]
+}
 
 

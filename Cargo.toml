@@ -36,7 +36,7 @@ utoipa-scalar = { version = '0.3', features = ['axum'] }
 serde = { version = '1.0', features = ['derive'] }
 serde_json = { version = '1.0' }
 serde_yaml = { version = '0.9' }
-tonic = { version = '0.13', features = ['router', 'default', 'prost', 'server'] }
+tonic = { version = '0.14', features = ['router', 'default', 'prost', 'server'] }
 prost = { version = '0.14', features = ['default'] }
 thiserror = '2.0'
 validator = { version = '0.20', features = ['derive'] }

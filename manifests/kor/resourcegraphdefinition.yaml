@@ -24,6 +24,14 @@ spec:
 
   # Define the resources this API will manage.
   resources:
+    - id: service_account
+      template:
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: ${schema.spec.name}
+          labels:
+            account: ${schema.spec.name}
     - id: deployment
       template:
         apiVersion: apps/v1
@@ -40,6 +48,7 @@ spec:
               labels:
                 app: ${schema.spec.name}
             spec:
+              serviceAccountName: ${service_account.metadata.name}
               containers:
                 - name: ${schema.spec.name}
                   image: ${schema.spec.image}:${schema.spec.tag} # Use the image provided by user

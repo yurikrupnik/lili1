@@ -40,6 +40,10 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      # Install cargo-audit for security auditing
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
       # Cache Rust dependencies
       - uses: Swatinem/rust-cache@v2
         with:
@@ -77,6 +81,10 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      # Run cargo audit for security vulnerabilities
+      - name: Run cargo audit
+        run: cargo audit
+
       # Nx Affected runs only tasks affected by the changes in this PR/commit. Learn more: https://nx.dev/ci/features/affected
       - run: bun nx affected -t format lint test build container --parallel=3
         env:

@@ -50,11 +50,11 @@ kcl_options:
         chart: velero
         helm_repo: "https://vmware-tanzu.github.io/helm-charts/"
         target_revision: 10.0.x
-      - name: cloudnative-pg
-        namespace: "cnpg-system"
-        chart: cloudnative-pg
-        helm_repo: "https://cloudnative-pg.github.io/charts"
-        target_revision: 0.24.x
+#      - name: cloudnative-pg
+#        namespace: "cnpg-system"
+#        chart: cloudnative-pg
+#        helm_repo: "https://cloudnative-pg.github.io/charts"
+#        target_revision: 0.24.x
       - name: cert-manager
         namespace: "cert-manager"
         chart: cert-manager
@@ -71,17 +71,19 @@ kcl_options:
         chart: kyverno
         helm_repo: "https://kyverno.github.io/kyverno/"
         target_revision: 3.4.x
-#      - name: cert-manager
-#        enabled: false
-#        repo_url: "https://github.com/cert-manager/cert-manager"
-#        path: "deploy/charts/cert-manager"
-#        namespace: "cert-manager"
-#        chart: "cert-manager"
-#        helm_repo: "https://charts.jetstack.io"
-#      - name: istio-base
-#        enabled: false
-#        repo_url: "https://github.com/istio/istio"
-#        path: "manifests/charts/base"
-#        namespace: "istio-system"
-#        chart: "base"
-#        helm_repo: "https://istio-release.storage.googleapis.com/charts"
+        sync_wave: 1
+#      - name: fiber-mongo
+#        namespace: aris
+#        repo_url: https://github.com/yurikrupnik/fiber-mongo
+#        path: k8s/base
+      - name: first-rust-app
+        namespace: aris
+        repo_url: https://github.com/yurikrupnik/first-rust-app
+        path: k8s/base
+        sync_wave: 3
+      - name: gitops-v2
+        namespace: gitops
+        repo_url: https://github.com/yurikrupnik/gitops-v2
+        path: cluster/second-cluster
+        sync_wave: 3
+

@@ -1,0 +1,126 @@
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-gcp
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/provider-gcp:v0.22.0
+
+---
+apiVersion: gcp.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  projectID: playground-447016
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: gcp-secret
+      key: creds
+
+---
+apiVersion: storage.gcp.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: velero-backups-crossplane
+spec:
+  forProvider:
+    location: US
+    storageClass: STANDARD
+    versioning:
+      enabled: true
+    lifecycleRule:
+    - action:
+        type: Delete
+      condition:
+        age: 90
+    uniformBucketLevelAccess: true
+  providerConfigRef:
+    name: default
+
+---
+apiVersion: cloudplatform.gcp.crossplane.io/v1beta1
+kind: ServiceAccount
+metadata:
+  name: velero-crossplane-sa
+spec:
+  forProvider:
+    displayName: "Velero Service Account (Crossplane)"
+    description: "Service account for Velero backups managed by Crossplane"
+  providerConfigRef:
+    name: default
+
+---
+apiVersion: cloudplatform.gcp.crossplane.io/v1beta1
+kind: ServiceAccountKey
+metadata:
+  name: velero-sa-key
+spec:
+  forProvider:
+    serviceAccountIdRef:
+      name: velero-crossplane-sa
+  writeConnectionSecretsToRef:
+    name: velero-gcp-credentials
+    namespace: velero
+  providerConfigRef:
+    name: default
+
+---
+apiVersion: cloudplatform.gcp.crossplane.io/v1beta1
+kind: ProjectIAMBinding
+metadata:
+  name: velero-storage-admin
+spec:
+  forProvider:
+    project: playground-447016
+    role: roles/storage.admin
+    members:
+    - serviceAccountRef:
+        name: velero-crossplane-sa
+  providerConfigRef:
+    name: default
+
+---
+apiVersion: cloudplatform.gcp.crossplane.io/v1beta1
+kind: ProjectIAMBinding
+metadata:
+  name: velero-compute-storage-admin
+spec:
+  forProvider:
+    project: playground-447016
+    role: roles/compute.storageAdmin
+    members:
+    - serviceAccountRef:
+        name: velero-crossplane-sa
+  providerConfigRef:
+    name: default
+
+---
+apiVersion: storage.gcp.crossplane.io/v1beta1
+kind: BucketIAMBinding
+metadata:
+  name: velero-bucket-admin
+spec:
+  forProvider:
+    bucketRef:
+      name: velero-backups-crossplane
+    role: roles/storage.objectAdmin
+    members:
+    - serviceAccountRef:
+        name: velero-crossplane-sa
+  providerConfigRef:
+    name: default
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: velero-crossplane-config
+  namespace: velero
+#type: Opaque
+#stringData:
+data:
+  bucket: "velero-backups-crossplane"
+  project: "playground-447016"
