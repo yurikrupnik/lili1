@@ -2,9 +2,18 @@
 # Uses KCL scripts and dynamic helm repository management
 
 # Configuration constants
-const DEFAULT_CLUSTER = "dev-cluster"
+const DEFAULT_CLUSTER = "my-cluster"
 const KCL_APPS_PATH = "scripts/kcl/apps"
+const KCL_CORE_PATH = "scripts/kcl/core"
+const KCL_CNCF_PATH = "scripts/kcl/cncf"
 const KCL_CONFIG_FILE = "scripts/kcl/apps/kcl.yaml"
+
+#def github_token [] -> string {
+ # gh auth token
+#}
+def "cluster_delete" [] {
+  kind delete cluster
+}
 
 # Load KCL configuration dynamically
 def load_kcl_config [] {
@@ -195,6 +204,10 @@ def generate_gitops_manifests [
 
         $manifest | save $"($output_dir)/($app.name).yaml"
     }
+}
+# Cluster management functions
+export def cluster_ass [] {
+    $env.CLUSTER_NAME? | default $DEFAULT_CLUSTER
 }
 
 # Cluster management functions
