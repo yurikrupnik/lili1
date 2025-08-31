@@ -1,0 +1,35 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: gitops.yurikrupnik.com
+spec:
+  group: yurikrupnik.com
+  names:
+    categories:
+    - crossplane
+    kind: GitOps
+    plural: gitops
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        description: GitOps is the Schema for the GitOps API.
+        properties:
+          spec:
+            description: GitOpsSpec defines the desired state of GitOps.
+            properties:
+              parameters:
+                properties:
+                  image:
+                    type: string
+                type: object
+            type: object
+          status:
+            description: GitOpsStatus defines the observed state of GitOps.
+            type: object
+        required:
+        - spec
+        type: object
+    served: true

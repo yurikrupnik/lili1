@@ -1,0 +1,25 @@
+apiVersion: platform.example.com/v1alpha1
+kind: Shit
+metadata:
+  name: shit
+  namespace: default
+spec:
+  parameters:
+    name: shit1
+#    port: 8080
+#    replicas: 1
+#    service:
+#      enabled: true
+#    ingress:
+#      enabled: false
+#    serviceAccount: default
+#    resources:
+#      requests:
+#        memory: "64Mi"
+#        cpu: "250m"
+#      limits:
+#        memory: "1Gi"
+#        cpu: "1"
+#status:
+#  availableReplicas: 1
+#  url: "http://localhost:8080"

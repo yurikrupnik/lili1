@@ -1,0 +1,25 @@
+---
+apiVersion: gcp.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  projectID: playground-447016
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: config-secrets
+      key: iac-manager-gcp
+---
+apiVersion: aws.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: config-secrets
+      key: iac-manager-aws

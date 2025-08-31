@@ -1,0 +1,34 @@
+apiVersion: pkg.crossplane.io/v1beta1
+kind: Function
+metadata:
+  name: crossplane-contrib-function-kcl
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.11.4
+---
+apiVersion: pkg.crossplane.io/v1beta1
+kind: Function
+metadata:
+  name: crossplane-contrib-function-cue
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/function-cue:v0.4.1
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Function
+metadata:
+  name: upbound-function-claude
+spec:
+  package: xpkg.upbound.io/upbound/function-claude:v0.2.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Function
+metadata:
+  name: upbound-function-claude-status-transformer
+spec:
+  package: xpkg.upbound.io/upbound/function-claude-status-transformer:v0.1.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Function
+metadata:
+  name: upbound-function-openai
+spec:
+  package: xpkg.upbound.io/upbound/function-openai:v0.1.0

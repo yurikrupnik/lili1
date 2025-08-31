@@ -1,3 +1,18 @@
+dependecies:
+  - crossplane
+  - external-secrets
+
+providers:
+  - xpkg.upbound.io/upbound/provider-gcp-compute:v1
+  - xpkg.upbound.io/upbound/provider-gcp-redis:v1
+  - xpkg.upbound.io/crossplane-contrib/function-kcl:latest
+
+functions:
+  - xpkg.upbound.io/crossplane-contrib/function-kcl:latest
+  - xpkg.upbound.io/crossplane-contrib/function-cue:latest
+  - xpkg.upbound.io/upbound/function-claude:v0.2.0
+  - xpkg.upbound.io/upbound/function-openai:v0.1.0
+  - xpkg.upbound.io/upbound/function-claude-status-transformer:v0.1.0
 kcl_options:
   - key: config
     value:
@@ -50,11 +65,11 @@ kcl_options:
         chart: velero
         helm_repo: "https://vmware-tanzu.github.io/helm-charts/"
         target_revision: 10.0.x
-#      - name: cloudnative-pg
-#        namespace: "cnpg-system"
-#        chart: cloudnative-pg
-#        helm_repo: "https://cloudnative-pg.github.io/charts"
-#        target_revision: 0.24.x
+      #      - name: cloudnative-pg
+      #        namespace: "cnpg-system"
+      #        chart: cloudnative-pg
+      #        helm_repo: "https://cloudnative-pg.github.io/charts"
+      #        target_revision: 0.24.x
       - name: cert-manager
         namespace: "cert-manager"
         chart: cert-manager
@@ -72,19 +87,18 @@ kcl_options:
         helm_repo: "https://kyverno.github.io/kyverno/"
         target_revision: 3.4.x
         sync_wave: 1
-#      - name: fiber-mongo
-#        namespace: aris
-#        repo_url: https://github.com/yurikrupnik/fiber-mongo
-#        path: k8s/base
+      #      - name: fiber-mongo
+      #        namespace: aris
+      #        repo_url: https://github.com/yurikrupnik/fiber-mongo
+      #        path: k8s/base
       - name: first-rust-app
         namespace: aris
         repo_url: https://github.com/yurikrupnik/first-rust-app
         path: k8s/base
         sync_wave: 3
-#        local: true
+      #        local: true
       - name: gitops-v2
         namespace: gitops
         repo_url: https://github.com/yurikrupnik/gitops-v2
         path: cluster/second-cluster
         sync_wave: 3
-

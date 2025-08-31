@@ -16,8 +16,7 @@ schema AppConfig:
     labels?: {str:str} = {}
     app_type?: str = "backend"
 
-
-create_app = lambda app: AppConfig {
+create_app = lambda app: AppConfig -> [apps.Deployment | core.Service | networking.Ingress] {
     dev = apps.Deployment {
         metadata = {
             name = app.name
@@ -47,16 +46,15 @@ create_app = lambda app: AppConfig {
                             image: app.image
                             imagePullPolicy: "IfNotPresent"
                             resources = {
-                              requests = {
-                                memory: "32Mi"
-                                cpu: "150m"
-                              }
-                              limits = {
-                                 memory: "64Mi"
-                                 cpu: "100m"
-                              }
+                                requests = {
+                                    memory: "16Mi"
+                                    cpu: "100m"
+                                }
+                                limits = {
+                                    memory: "32Mi"
+                                    cpu: "200m"
+                                }
                             }
-
                             ports = [
                                 {
                                     containerPort = app.port
@@ -85,9 +83,10 @@ create_app = lambda app: AppConfig {
             }
             ports: [
                 {
+                    name: "http"
                     protocol: "TCP"
-                    port= app.port
-                    targetPort= app.port
+                    port = app.port
+                    targetPort = app.port
                 }
             ]
             $type: "ClusterIP"
@@ -99,8 +98,8 @@ create_app = lambda app: AppConfig {
         apiVersion = "networking.k8s.io/v1"
         kind = "Ingress"
         metadata = metav1.ObjectMeta {
-            name = "airs"
-            namespace = "ars"
+            name = app.name
+            namespace = app.namespace
             labels = {
                 app = "dam"
             }

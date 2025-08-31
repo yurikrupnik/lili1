@@ -1,0 +1,16 @@
+apiVersion: ops.crossplane.io/v1alpha1
+kind: Operation
+metadata:
+  name: analyze-events-for-pod-distress
+spec:
+  mode: Pipeline
+  pipeline:
+  - functionRef:
+      name: crossplane-contrib-function-dummy
+    input:
+      apiVersion: dummy.fn.crossplane.io/v1beta1
+      kind: Response
+      metadata: {}
+      response: {}
+    step: crossplane-contrib-function-dummy
+  retryLimit: 3

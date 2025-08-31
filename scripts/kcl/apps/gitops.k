@@ -24,8 +24,6 @@ schema App:
     self_heal: bool = True
     sync_wave: int = 0
     depends_on: [str] = []
-
-
 _create_flux_git_repository = lambda app: App -> fluxV1.GitRepository {
     fluxV1.GitRepository {
         metadata = {
@@ -54,10 +52,8 @@ _create_flux_helm_repository = lambda app: App -> fluxV1.HelmRepository {
         }
     }
 }
-
 # For now, let's create basic YAML structures for HelmRelease and Kustomization
 # since the specific KCL modules might not be available
-
 _create_flux_helm_release = lambda app: App -> any {
     {
         apiVersion = "helm.toolkit.fluxcd.io/v2beta1"
@@ -98,7 +94,8 @@ _create_flux_kustomization = lambda app: App -> any {
             path = app.path
             prune = app.prune
             sourceRef = {
-                kind = "GitRepository"
+                # kind = "GitRepository"
+                kind = fluxV1.GitRepository.kind
                 name = app.name
                 namespace = app.namespace
             }
@@ -149,15 +146,9 @@ _create_argocd_application = lambda app: App -> argoV1.Application {
 
 _create_flux_resources = lambda apps: [App] -> [any] {
     # Create all source resources first (GitRepo or HelmRepo)
-    source_resources = [
-        _create_flux_helm_repository(app) if app.chart and app.helm_repo else _create_flux_git_repository(app)
-        for app in apps
-    ]
+    source_resources = [_create_flux_helm_repository(app) if app.chart and app.helm_repo else _create_flux_git_repository(app) for app in apps]
     # Create all workload resources (HelmRelease or Kustomization)
-    workload_resources = [
-        _create_flux_helm_release(app) if app.chart and app.helm_repo else _create_flux_kustomization(app)
-        for app in apps
-    ]
+    workload_resources = [_create_flux_helm_release(app) if app.chart and app.helm_repo else _create_flux_kustomization(app) for app in apps]
     # Combine both lists
     source_resources + workload_resources
 }
@@ -182,7 +173,7 @@ _create_cert_manager_crds_job = lambda -> [any] {
                 name = name
                 namespace = namespace
             }
-        },
+        }
         rbac.ClusterRole {
             metadata = metav1.ObjectMeta {
                 name = name
@@ -192,7 +183,7 @@ _create_cert_manager_crds_job = lambda -> [any] {
                 resources = ["customresourcedefinitions"]
                 verbs = ["get", "list", "create", "update", "patch"]
             }]
-        },
+        }
         rbac.ClusterRoleBinding {
             metadata = metav1.ObjectMeta {
                 name = name
@@ -207,7 +198,7 @@ _create_cert_manager_crds_job = lambda -> [any] {
                 name = name
                 namespace = namespace
             }]
-        },
+        }
         batch.Job {
             metadata = metav1.ObjectMeta {
                 name = name
@@ -234,34 +225,26 @@ get_gitops_resources = lambda gitops_type: str, apps: [App] -> [any] {
     # Extract unique namespaces from apps
     namespaces = [app.namespace for app in apps if app.namespace]
     unique_namespaces = list({ns: True for ns in namespaces})
-
     # Create namespace resources
     namespace_resources = [_create_namespace(ns) for ns in unique_namespaces]
-
     # Check if cert-manager is in the apps list
     has_cert_manager = len([app for app in apps if app.name == "cert-manager"]) > 0
-
     # Create cert-manager CRDs resources if needed
     cert_manager_crds = _create_cert_manager_crds_job() if has_cert_manager else []
 
-    base_resources = _create_flux_resources(apps) if gitops_type == "flux" else [
-        _create_argocd_application(app) for app in apps
-    ] if gitops_type == "argo" else []
+    base_resources = _create_flux_resources(apps) if gitops_type == "flux" else [_create_argocd_application(app) for app in apps] if gitops_type == "argo" else []
 
     namespace_resources + cert_manager_crds + base_resources
 }
-
 # Function to create app-specific resources for a single app
-_create_app_folder_resources = lambda app: App -> {str: any} {
+_create_app_folder_resources = lambda app: App -> {str:any} {
     # Check if cert-manager is this app for CRDs Job
     has_cert_manager = app.name == "cert-manager"
     cert_manager_crds = _create_cert_manager_crds_job() if has_cert_manager else []
-
     # Create base resources
     namespace_resource = _create_namespace(app.namespace)
     source_resource = _create_flux_helm_repository(app) if app.chart and app.helm_repo else _create_flux_git_repository(app)
     workload_resource = _create_flux_helm_release(app) if app.chart and app.helm_repo else _create_flux_kustomization(app)
-
     # Build resources list
     app_resources = [namespace_resource, source_resource, workload_resource]
     if has_cert_manager:
@@ -276,7 +259,6 @@ _create_app_folder_resources = lambda app: App -> {str: any} {
         kustomization_resources = kustomization_resources + ["helm-repository.yaml", "helm-release.yaml"]
     else:
         kustomization_resources = kustomization_resources + ["git-repository.yaml", "kustomization-resource.yaml"]
-
     # Create Kustomization file content
     kustomization_file = {
         apiVersion = "kustomize.config.k8s.io/v1beta1"
@@ -289,17 +271,10 @@ _create_app_folder_resources = lambda app: App -> {str: any} {
         "kustomization": kustomization_file
     }
 }
-
 # New function to generate folder structure for FluxCD
-generate_flux_folder_structure = lambda apps: [App] -> {str: any} {
-    {
-        "clusters/second-cluster/{}".format(app.name): _create_app_folder_resources(app)
-        for app in apps
-    }
+generate_flux_folder_structure = lambda apps: [App] -> {str:any} {
+    {"clusters/second-cluster/{}".format(app.name): _create_app_folder_resources(app) for app in apps}
 }
-
 # Instantiate resources when run directly
-
 # Output just resources when resources_only option is true
 _resources_only = option("resources_only") or True
-

@@ -1,0 +1,16 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: gitops.yurikrupnik.com
+spec:
+  compositeTypeRef:
+    apiVersion: yurikrupnik.com/v1alpha1
+    kind: GitOps
+  mode: Pipeline
+  pipeline:
+  - functionRef:
+      name: krupnik-upbound-p1gitops-compose-resources
+    step: gitops-compose-resources
+  - functionRef:
+      name: crossplane-contrib-function-auto-ready
+    step: crossplane-contrib-function-auto-ready

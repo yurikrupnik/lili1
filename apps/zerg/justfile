@@ -1,0 +1,28 @@
+api:
+  cd api && PORT=9080 watchexec -r -e rs -- cargo run
+
+ui:
+  cd ui && bun run dev
+
+ts-agent:
+  cd ts-agent && npx @langchain/langgraph-cli dev
+
+dev: api ui ts-agent
+
+run: ui api ts-agent
+
+test:
+  bun run test
+
+test-ui:
+  bun run test:ui
+
+test-headed:
+  bun run test:headed
+
+test-simple:
+  bunx playwright test e2e/simple.spec.ts --project=chromium
+
+test-debug:
+  bun run test:debug
+

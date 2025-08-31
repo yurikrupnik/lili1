@@ -1,115 +1,71 @@
-"""Define a custom Reasoning and Action agent.
+from langchain_openai import ChatOpenAI
 
-Works with a chat model with tool calling support.
-"""
+from langgraph_supervisor import create_supervisor
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
 
-from datetime import UTC, datetime
-from typing import Dict, List, Literal, cast
+model = ChatOpenAI(model="gpt-4o")
 
-from langchain_core.messages import AIMessage
-from langgraph.graph import StateGraph
-from langgraph.prebuilt import ToolNode
+checkpointer = InMemorySaver()
+store = InMemoryStore()
 
-from .configuration import Configuration
-from .state import InputState, State
-from .tools import TOOLS
-from .utils import load_chat_model
+# Create specialized agents
 
-# Define the function that calls the model
+def add(a: float, b: float) -> float:
+  """Add two numbers."""
+  return a + b
 
+def multiply(a: float, b: float) -> float:
+  """Multiply two numbers."""
+  return a * b
 
-async def call_model0(state: State) -> Dict[str, List[AIMessage]]:
-    """Call the LLM powering our "agent".
+def web_search(query: str) -> str:
+  """Search the web for information."""
+  return (
+    "Here are the headcounts for each of the FAANG companies in 2024:\n"
+    "1. **Facebook (Meta)**: 67,317 employees.\n"
+    "2. **Apple**: 164,000 employees.\n"
+    "3. **Amazon**: 1,551,000 employees.\n"
+    "4. **Netflix**: 14,000 employees.\n"
+    "5. **Google (Alphabet)**: 181,269 employees."
+  )
 
-    This function prepares the prompt, initializes the model, and processes the response.
-
-    Args:
-        state (State): The current state of the conversation.
-        config (RunnableConfig): Configuration for the model run.
-
-    Returns:
-        dict: A dictionary containing the model's response message.
-    """
-    configuration = Configuration.from_context()
-
-    # Initialize the model with tool binding. Change the model or add more tools here.
-    model = load_chat_model(configuration.model).bind_tools(TOOLS)
-
-    # Format the system prompt. Customize this to change the agent's behavior.
-    system_message = configuration.system_prompt.format(
-        system_time=datetime.now(tz=UTC).isoformat()
-    )
-
-    # Get the model's response
-    response = cast(
-        AIMessage,
-        await model.ainvoke(
-            [{"role": "system", "content": system_message}, *state.messages]
-        ),
-    )
-
-    # Handle the case when it's the last step and the model still wants to use a tool
-    if state.is_last_step and response.tool_calls:
-        return {
-            "messages": [
-                AIMessage(
-                    id=response.id,
-                    content="Sorry, I could not find an answer to your question in the specified number of steps.",
-                )
-            ]
-        }
-
-    # Return the model's response as a list to be added to existing messages
-    return {"messages": [response]}
-
-
-# Define a new graph
-
-builder = StateGraph(State, input=InputState, config_schema=Configuration)
-
-# Define the two nodes we will cycle between
-builder.add_node(call_model0)
-builder.add_node("tools", ToolNode(TOOLS))
-
-# Set the entrypoint as `call_model0`
-# This means that this node is the first one called
-builder.add_edge("__start__", "call_model0")
-
-
-def route_model_output(state: State) -> Literal["__end__", "tools"]:
-    """Determine the next node based on the model's output.
-
-    This function checks if the model's last message contains tool calls.
-
-    Args:
-        state (State): The current state of the conversation.
-
-    Returns:
-        str: The name of the next node to call ("__end__" or "tools").
-    """
-    last_message = state.messages[-1]
-    if not isinstance(last_message, AIMessage):
-        raise ValueError(
-            f"Expected AIMessage in output edges, but got {type(last_message).__name__}"
-        )
-    # If there is no tool call, then we finish
-    if not last_message.tool_calls:
-        return "__end__"
-    # Otherwise we execute the requested actions
-    return "tools"
-
-
-# Add a conditional edge to determine the next step after `call_model0`
-builder.add_conditional_edges(
-    "call_model0",
-    # After call_model0 finishes running, the next node(s) are scheduled
-    # based on the output from route_model_output
-    route_model_output,
+math_agent = create_react_agent(
+  model=model,
+  tools=[add, multiply],
+  name="math_expert",
+  prompt="You are a math expert. Always use one tool at a time."
 )
 
-# Add a normal edge from `tools` to `call_model0`
-# This creates a cycle: after using tools, we always return to the model
-builder.add_edge("tools", "call_model0")
+research_agent = create_react_agent(
+  model=model,
+  tools=[web_search],
+  name="research_expert",
+  prompt="You are a world class researcher with access to web search. Do not do any math."
+)
 
-# Compile the builder into an executable graph
-graph = builder.compile(name="ReAct Agent")
+# Create supervisor workflow
+workflow = create_supervisor(
+  [research_agent, math_agent],
+  model=model,
+  prompt=(
+    "You are a team supervisor managing a research expert and a math expert. "
+    "For current events, use research_agent. "
+    "For math problems, use math_agent."
+  ),
+  # checkpointer=checkpointer,
+  # store=store,
+
+)
+
+# Compile and run
+app = workflow.compile()
+result = app.invoke({
+  "messages": [
+    {
+      "role": "user",
+      "content": "what's the combined headcount of the FAANG companies in 2024?"
+    }
+  ]
+})

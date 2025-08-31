@@ -1,0 +1,37 @@
+apiVersion: meta.dev.upbound.io/v2alpha1
+kind: Project
+metadata:
+  name: getting-started
+spec:
+  apiDependencies:
+  - k8s:
+      version: v1.33.0
+    type: k8s
+  dependsOn:
+  - apiVersion: pkg.crossplane.io/v1
+    kind: Function
+    package: xpkg.upbound.io/crossplane-contrib/function-auto-ready
+    version: '>=v0.0.0'
+  - apiVersion: pkg.crossplane.io/v1
+    kind: Function
+    package: xpkg.upbound.io/upbound/function-claude
+    version: v0.2.0
+  - apiVersion: pkg.crossplane.io/v1beta1
+    kind: Function
+    package: xpkg.upbound.io/upbound/function-analysis-gate
+    version: v0.0.0-20250808233445-b3bb3dafbd25
+  - apiVersion: pkg.crossplane.io/v1beta1
+    kind: Function
+    package: xpkg.upbound.io/upbound/function-remediation-gate
+    version: v0.0.0-20250808233532-ad1d6ad2aea6
+  - apiVersion: pkg.crossplane.io/v1beta1
+    kind: Function
+    package: xpkg.upbound.io/upbound/function-event-filter
+    version: v0.0.0-20250808235120-d07a570f15d6
+  description: This is where you can describe your project.
+  license: Apache-2.0
+  maintainer: Upbound User <user@example.com>
+  readme: |
+    This is where you can add a readme for your project.
+  repository: xpkg.upbound.io/krupnik/getting-started
+  source: github.com/upbound/project-template-scratch

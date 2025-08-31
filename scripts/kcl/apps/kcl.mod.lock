@@ -7,6 +7,14 @@
     reg = "ghcr.io"
     repo = "kcl-lang/argo-cd"
     oci_tag = "2.13.3"
+  [dependencies.crossplane]
+    name = "crossplane"
+    full_name = "crossplane_1.17.3"
+    version = "1.17.3"
+    sum = "8hx/1t6Gn0UZjaycAJIJ2Xj1R7vefZq7mMpAim21COc="
+    reg = "ghcr.io"
+    repo = "kcl-lang/crossplane"
+    oci_tag = "1.17.3"
   [dependencies.external-secrets]
     name = "external-secrets"
     full_name = "external-secrets_0.18.2"

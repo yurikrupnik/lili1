@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
     init_tracer_provider();
 
     let config = AppConfig::from_env()?;
-    
+
     tracing::info!(
         service = "protos_api",
         version = env!("CARGO_PKG_VERSION"),
@@ -81,10 +81,10 @@ async fn main() -> Result<()> {
 
     let app = Router::new()
         .merge(create_routes())
-        .route("/health", axum::routing::get(health_check))
+        .route("/healths", axum::routing::get(health_check))
         .layer(axum_middleware::from_fn(auth_middleware))
         .layer(axum_middleware::from_fn(rate_limiter))
-        .layer(TimeoutLayer::new(Duration::from_secs(30)))
+        .layer(TimeoutLayer::new(Duration::from_secs(31)))
         .layer(RequestBodyLimitLayer::new(1024 * 1024)) // 1MB limit
         .layer(CookieManagerLayer::new())
         .layer(CompressionLayer::new())
@@ -95,7 +95,7 @@ async fn main() -> Result<()> {
         .fallback(|| async { (StatusCode::NOT_FOUND, "Route not found") });
 
     let listener = tokio::net::TcpListener::bind(&config.server_url()).await?;
-    
+
     tracing::info!(
         address = %listener.local_addr()?,
         "Protos API server listening"

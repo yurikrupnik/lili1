@@ -25,7 +25,10 @@ impl Env {
     // pub fn get_postgres() -> Result<String> {
     //     Env::get_env("DATABASE_URL")
     // }
-
+    // pub fn get_port(self) -> Result<u16> {
+    //   let d = self::Env::get_port();
+    //   Env::get_env_parse("PORT")
+    // }
     pub fn get_postgres() -> Result<String> {
         DATABASE_URL.clone()
     }

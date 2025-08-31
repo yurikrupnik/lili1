@@ -1,12 +1,17 @@
 # Advanced Configuration Management for Kubernetes Applications
 # Uses KCL scripts and dynamic helm repository management
-
+use generic.nu *
 # Configuration constants
 const DEFAULT_CLUSTER = "my-cluster"
 const KCL_APPS_PATH = "scripts/kcl/apps"
 const KCL_CORE_PATH = "scripts/kcl/core"
 const KCL_CNCF_PATH = "scripts/kcl/cncf"
 const KCL_CONFIG_FILE = "scripts/kcl/apps/kcl.yaml"
+const DATA = [
+  {
+    "data": { "ad": "da" }
+  }
+]
 
 #def github_token [] -> string {
  # gh auth token
@@ -204,15 +209,6 @@ def generate_gitops_manifests [
 
         $manifest | save $"($output_dir)/($app.name).yaml"
     }
-}
-# Cluster management functions
-export def cluster_ass [] {
-    $env.CLUSTER_NAME? | default $DEFAULT_CLUSTER
-}
-
-# Cluster management functions
-export def cluster_name [] {
-    $env.CLUSTER_NAME? | default $DEFAULT_CLUSTER
 }
 
 export def "main cluster info" [] {

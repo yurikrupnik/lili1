@@ -1,29 +1,33 @@
 use config.nu
+use generic.nu *
 
 def "main create" [
     # --providers = [aws azure google kind upcloud]
     --ingress = false
 ] {
-    let cluster_name = (config cluster_name)
+    let cluster_name = (cluster_name)
 
     let config = http get "https://raw.githubusercontent.com/yurikrupnik/gitops/main/cluster/cluster.yaml"
 
     let temp_file = $"/tmp/kind-config-($env.USER).yaml"
     $config | save $temp_file -f
 
-    print "📦 Creating Kind cluster..."
-    kind create cluster --name $cluster_name --config $temp_file
+    if $cluster_name  {
+      print "📦 Creating Kind cluster..."
+      kind create cluster --name $cluster_name --config $temp_file
+    }
     rm $temp_file
 
     kubectl cluster-info --context $"kind-($cluster_name)"
     kubectl wait --for=condition=Ready nodes --all --timeout=300s
 
+# dev_dependencies
     [
-        { nu scripts/nu/ingress.nu }
+        #{ nu scripts/nu/ingress.nu }
         { config main delete temp_files }
         #{ config main apply kyverno }
     ] | par-each { |task| do $task }
-
+# dependencies
     # Read gitops configuration from kcl.yaml
     let kcl_config = (open scripts/kcl/apps/kcl.yaml)
     let config_value = ($kcl_config.kcl_options | where key == "config" | get value.0)
@@ -101,7 +105,7 @@ spec:
 }
 
 def "main delete" [] {
-    let cluster_name = (config cluster_name)
+    let cluster_name = (cluster_name)
     print "📦 Deleting Kind cluster..."
     kind delete cluster --name $cluster_name
 }

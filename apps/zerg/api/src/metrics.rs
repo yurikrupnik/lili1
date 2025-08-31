@@ -21,7 +21,7 @@ pub fn setup_metrics() -> eyre::Result<()> {
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(10));
         loop {
             interval.tick().await;
-            
+
             gauge!("process_cpu_seconds_total").set(get_cpu_usage());
             gauge!("process_resident_memory_bytes").set(get_memory_usage() as f64);
             gauge!("tokio_runtime_workers_count").set(get_active_workers() as f64);
@@ -45,25 +45,34 @@ pub async fn metrics_middleware(
         .to_string();
 
     let response = next.run(req).await;
-    
+
     let status = response.status();
     let duration = start.elapsed();
-    
-    counter!("http_requests_total", 
-        "method" => method.clone(), 
-        "status" => status.as_u16().to_string(), 
+
+    counter!("http_requests_total",
+        "method" => method.clone(),
+        "status" => status.as_u16().to_string(),
         "path" => path.clone()
     ).increment(1);
-    
-    histogram!("http_request_duration_seconds", 
-        "method" => method, 
-        "status" => status.as_u16().to_string(), 
+
+    histogram!("http_request_duration_seconds",
+        "method" => method,
+        "status" => status.as_u16().to_string(),
         "path" => path
     ).record(duration.as_secs_f64());
 
     response
 }
 
+#[utoipa::path(
+    get,
+    path = "/metrics",
+    tag = "metrics",
+    responses(
+        (status = 200, description = "Prometheus metrics", body = String, content_type = "text/plain"),
+        (status = 500, description = "Internal server error")
+    )
+)]
 pub async fn metrics_handler() -> Result<String, StatusCode> {
     match METRICS_HANDLE.get() {
         Some(handle) => Ok(handle.render()),
@@ -81,8 +90,9 @@ fn get_memory_usage() -> u64 {
         for line in contents.lines() {
             if line.starts_with("VmRSS:") {
                 if let Some(value) = line.split_whitespace().nth(1) {
+                    print!("{:?}", value);
                     if let Ok(kb) = value.parse::<u64>() {
-                        return kb * 1024; 
+                        return kb * 1024;
                     }
                 }
             }

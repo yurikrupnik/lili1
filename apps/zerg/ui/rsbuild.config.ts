@@ -9,4 +9,14 @@ export default defineConfig({
     }),
     pluginSolid(),
   ],
+  tools: {
+    postcss: (config) => {
+      config.postcssOptions = {
+        plugins: [
+          '@tailwindcss/postcss',
+          'autoprefixer',
+        ],
+      };
+    },
+  },
 });

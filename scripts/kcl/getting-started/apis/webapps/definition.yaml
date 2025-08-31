@@ -1,0 +1,73 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: webapps.platform.example.com
+spec:
+  group: platform.example.com
+  names:
+    categories:
+    - crossplane
+    kind: WebApp
+    plural: webapps
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        description: WebApp is the Schema for the WebApp API.
+        properties:
+          spec:
+            description: WebAppSpec defines the desired state of WebApp.
+            properties:
+              parameters:
+                properties:
+                  image:
+                    type: string
+                  ingress:
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  port:
+                    type: number
+                  replicas:
+                    type: number
+                  resources:
+                    properties:
+                      limits:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                        type: object
+                      requests:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                        type: object
+                    type: object
+                  service:
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  serviceAccount:
+                    type: string
+                type: object
+            type: object
+          status:
+            description: WebAppStatus defines the observed state of WebApp.
+            properties:
+              availableReplicas:
+                type: number
+              url:
+                type: string
+            type: object
+        required:
+        - spec
+        type: object
+    served: true

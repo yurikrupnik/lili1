@@ -1,0 +1,27 @@
+apiVersion: yurikrupnik.com/v1alpha1
+kind: GitOps
+metadata:
+  name: gitops
+  namespace: default
+spec:
+  id: "gitops1"
+  parameters:
+    # use kcl gitops params
+    image: nginx
+#    port: 8080
+#    replicas: 1
+#    service:
+#      enabled: true
+#    ingress:
+#      enabled: false
+#    serviceAccount: default
+#    resources:
+#      requests:
+#        memory: "64Mi"
+#        cpu: "250m"
+#      limits:
+#        memory: "1Gi"
+#        cpu: "1"
+#status:
+#  availableReplicas: 1
+#  url: "http://localhost:8080"

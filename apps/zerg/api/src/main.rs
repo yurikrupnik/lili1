@@ -1,11 +1,16 @@
 mod shared;
 mod metrics;
 mod error;
+mod chat;
+mod swagger;
 
-use axum::{response::Html, routing::get, Json, Router, middleware};
+use axum::{response::Html, routing::{get, post}, Json, Router, middleware};
 use eyre::Result;
 use rust_services::{envs::Env, model::task::Task, tracing::init_tracing};
-use tower_http::trace::TraceLayer;
+use tower_http::{trace::TraceLayer, cors::CorsLayer};
+use chat::{chat_handler, chat_stream_handler};
+use utoipa::OpenApi;
+use swagger::ApiDoc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -17,8 +22,13 @@ async fn main() -> Result<()> {
     let app_router = Router::new()
         .route("/", get(handler))
         .route("/tasks", get(get_tasks))
+        .route("/api/chat", post(chat_handler))
+        .route("/api/chat/stream", post(chat_stream_handler))
         .route("/metrics", get(metrics::metrics_handler))
+        .route("/api-docs/openapi.json", get(serve_openapi))
         .layer(middleware::from_fn(metrics::metrics_middleware))
+        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_grpc())
         .layer(TraceLayer::new_for_http());
     let url = Env::get_url().map_err(|e| eyre::eyre!("Failed to get URL: {}", e))?;
     let listener = tokio::net::TcpListener::bind(&url).await?;
@@ -32,13 +42,27 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+#[utoipa::path(
+    get,
+    path = "/",
+    tag = "health",
+    responses(
+        (status = 200, description = "Health check", body = String)
+    )
+)]
 async fn handler() -> Html<&'static str> {
     Html("<h1>Hello, World from Local Services!</h1>")
 }
 
+#[utoipa::path(
+    get,
+    path = "/tasks",
+    tag = "tasks",
+    responses(
+        (status = 200, description = "List of tasks", body = [Task])
+    )
+)]
 async fn get_tasks() -> Json<Vec<Task>> {
-    // use uuid::Uuid;
-
     let sample_tasks = vec![
         Task {
             id: String::from("a"),
@@ -55,6 +79,10 @@ async fn get_tasks() -> Json<Vec<Task>> {
     ];
 
     Json(sample_tasks)
+}
+
+async fn serve_openapi() -> Json<utoipa::openapi::OpenApi> {
+    Json(ApiDoc::openapi())
 }
 
 async fn shutdown_signal() {

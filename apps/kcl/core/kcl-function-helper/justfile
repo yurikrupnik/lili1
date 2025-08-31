@@ -1,0 +1,24 @@
+
+validate-cli:
+  kcl version
+build:
+  kcl main.k -D local=false -D local=true -Y kcl.yaml
+doc:
+  kcl doc generate
+lint:
+  kcl lint
+test:
+  kcl test
+deploy:
+  kcl mod push
+graph:
+  kcl mod graph
+fmt:
+  kcl fmt
+update:
+  kcl mod update
+test-mod:
+  kcl mod pull k8s
+push:
+  kcl mod push oci://docker.io/yurikrupnik/kcl-core-functions
+  kcl mod push oci://docker.io/yurikrupnik/kcl-function-helper

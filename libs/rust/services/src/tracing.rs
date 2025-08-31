@@ -20,6 +20,9 @@ pub fn init_tracing() {
             .pretty()
             .try_init();
     }
+    
+    // metrics::setup_metrics()?;
+    // tracing::info!("Starting API server");
 }
 
 #[cfg(test)]
